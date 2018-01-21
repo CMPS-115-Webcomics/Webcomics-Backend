@@ -1,46 +1,57 @@
-CREATE TABLE Author (
-    authorID            INTEGER PRIMARY KEY,
-    name                VARCHAR(30) UNIQUE,
-    url                 VARCHAR(30) UNIQUE,
-    biography           TEXT
+DROP SCHEMA Comics CASCADE; 
+CREATE SCHEMA Comics;
+
+CREATE TABLE Comics.Account (
+    accountID           SERIAL PRIMARY KEY,
+    username            VARCHAR(30) UNIQUE,
+    profileURL          VARCHAR(30) UNIQUE,
+    email               VARCHAR(30) UNIQUE,
+    emailToken          VARCHAR(32),
+    emailVerified       BOOLEAN DEFAULT false,
+    biography           TEXT,
+    password            VARCHAR(256),
+    salt                VARCHAR(32)
 );
 
-CREATE TABLE Comic (
-    comicID             INTEGER PRIMARY KEY,
-    authorID            INTEGER NOT NULL,
-    name                VARCHAR(50),
-    url                 VARCHAR(30) UNIQUE,
+CREATE TABLE Comics.Comic (
+    comicID             SERIAL PRIMARY KEY,
+    accountID           INTEGER NOT NULL,
+    title               VARCHAR(50),
+    comicURl            VARCHAR(30) UNIQUE,
     description         VARCHAR(500),
-    FOREIGN KEY (authorID) REFERENCES Author(authorID)
+    usesChapters        BOOLEAN,
+    usesVolumes         BOOLEAN,
+    FOREIGN KEY (accountID) REFERENCES Comics.Account(accountID)
 );
 
-CREATE TABLE Volume (
-    volumeID            INTEGER,
-    comicID             INTEGER,
-    chapterNumber       INTEGER UNIQUE,
-    author              INTEGER,
+CREATE TABLE Comics.Volume (
+    volumeID            SERIAL PRIMARY KEY,
+    comicID             INTEGER NOT NULL,
+    volumeNumber        INTEGER UNIQUE,
     name                VARCHAR(50) UNIQUE,
-    PRIMARY KEY (volumeID),
-    FOREIGN KEY (comicID) REFERENCES Comic(comicID)
+    FOREIGN KEY (comicID) REFERENCES Comics.Comic(comicID)
 );
 
-CREATE TABLE Chapter (
+CREATE TABLE Comics.Chapter (
     chapterID           INTEGER,
     volumeID            INTEGER,
-    chapterNumber       INTEGER UNIQUE,
-    author              INTEGER,
+    chapterNumber       SERIAL UNIQUE,
     name                VARCHAR(50) UNIQUE,
+    comicID             INTEGER,
     PRIMARY KEY (chapterID),
-    FOREIGN KEY (comicID) REFERENCES Comic(comicID)
+    FOREIGN KEY (volumeID) REFERENCES Comics.Volume(volumeID),
+    FOREIGN KEY (comicID) REFERENCES Comics.Comic(comicID)
 );
 
-CREATE TABLE Page (
-    pageNumber          INTEGER,
-    chapterNumber       INTEGER,
-    volumeNumber        INTEGER
-    comicID             INTEGER NOT NULL,
+CREATE TABLE Comics.Page (
+    pageId              INTEGER PRIMARY KEY,
+    pageNumber          SERIAL UNIQUE,
+    chapterID           INTEGER,
+    comicID             INTEGER,
     author              INTEGER,
     altText             VARCHAR(300),
-    PRIMARY KEY (pageNumber, chapterNumber, volumeNumber),
-    FOREIGN KEY (comicID) REFERENCES Comic(comicID)
+    imgURL              VARCHAR(128),
+    UNIQUE (pageNumber, volumeID, chapterID),
+    FOREIGN KEY (chapterID) REFERENCES Comics.chapterID(chapterID),
+    FOREIGN KEY (comicID) REFERENCES Comics.Comic(comicID)
 );
