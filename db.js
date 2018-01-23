@@ -5,9 +5,7 @@ const {
 
 const pool = new Pool();
 
-module.exports = {
-  query: pool.query
-}
+module.exports = pool;
 
 /*
   PGUSER=postgres \
