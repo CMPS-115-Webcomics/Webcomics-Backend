@@ -8,8 +8,10 @@ router.post('/', async(req, res, next) => {
 
     res.send('done');
 });
+
 router.post('/register', async (req, res, next) => {
     try {
+        console.log(req.body.password, typeof req.body.password, req.body);
         const passwordData = await passwords.getHashedPassword(req.body.password);
         const quertResult = await db.query(`
         INSERT INTO Comics.Account (
@@ -29,6 +31,20 @@ router.post('/register', async (req, res, next) => {
         ]);
         res.send('done');
     } catch (e) {
+        res.send('error');
+    }
+});
+
+router.get('/logininfo', async (req, res, next) => {
+    const accountData = [];
+    try{
+        const queryDB = await db.query('SELECT * FROM Comics.Account');
+        queryDB.on('row', (row) => {
+            accountData.push(row);
+        })
+        
+    }
+    catch (e) {
         res.send('error');
     }
 });
