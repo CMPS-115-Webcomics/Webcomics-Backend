@@ -27,7 +27,7 @@ CREATE TABLE Comics.Volume (
     comicID             INTEGER NOT NULL,
     volumeNumber        INTEGER,
     name                VARCHAR(50) UNIQUE,
-    UNIQUE( volumeNumber, comicID )
+    UNIQUE( volumeNumber, comicID ),
     FOREIGN KEY (comicID) REFERENCES Comics.Comic(comicID)
 );
 
@@ -37,7 +37,7 @@ CREATE TABLE Comics.Chapter (
     chapterNumber       SERIAL,
     name                VARCHAR(50) UNIQUE,
     comicID             INTEGER,
-    UNIQUE( chapterNumber, volumeID, comicID )
+    UNIQUE( chapterNumber, volumeID, comicID ),
     FOREIGN KEY (volumeID) REFERENCES Comics.Volume(volumeID),
     FOREIGN KEY (comicID) REFERENCES Comics.Comic(comicID)
 );

@@ -2,7 +2,7 @@
 
 const crypto = require('crypto');
 const { StringDecoder } = require('string_decoder');
-const decoder = new StringDecoder('utf8');
+const decoder = new StringDecoder('base64');
 
 const genRandomString = function (length) {
   return crypto.randomBytes(Math.ceil(length / 2))
