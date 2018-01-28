@@ -1,22 +1,33 @@
 const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
-const pg = require('pg');
-const config = require('./config.json');
-
-var connection = new pg(config);
-
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
-
-app.listen(4200);
-
+const config = require('../config/config.json');
+const { Pool } = require('pg');
 var router = express.Router();
 
+const pool = new Pool({
+  user: config.PSQL_USER,
+  host: config.PSQL_HOST,
+  database: config.PSQL_DB,
+  password: config.PSQL_PASS,
+  port: config.PSQL_PORT,
+});
+
+
 /* Get a list of all comics. */
-router.get('/comic/list', function(req, res, next) {
-    //var list = client.query('SELECT title FROM Comics.CSomic ORDER BY title');
-    //res.json({message: list});
+router.get('/list', function(req, res, next) {
+    pool.connect((err, client, release) => {
+        if (err) {
+            return console.error("error acquiring client", err.stack);
+        }
+        client.query('SELECT NOW()', (err, result) => {
+            release();
+            if (err) {
+                return console.error('Error executing query', err.stack);
+            }
+            console.log(result.rows);
+        });
+    });
     res.json({ message: 'test' });
 });
 
@@ -26,7 +37,7 @@ router.get('/:id', function(req, res, next) {
 });
 
 /* Generate a new comic */
-router.post('/api/comic/create', function(req, res, next) {
+router.post('/create', function(req, res, next) {
 
     /*
     pg.connect(connectionString, function(err, client, done){
