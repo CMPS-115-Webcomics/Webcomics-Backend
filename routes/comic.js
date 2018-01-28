@@ -38,7 +38,7 @@ router.post('/api/comic/create', function(req, res, next) {
     client.query(
         'INSERT INTO Comics.Comic (accountID, title, comicURL, description)
         VALUES ($1, $2, $3, $4)', [
-            "get acc id",
+            'get acc id',
             req.body.title,
             req.body.url,
             req.body.description
