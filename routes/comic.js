@@ -6,11 +6,13 @@ const { Pool } = require('pg');
 var router = express.Router();
 
 const pool = new Pool({
-  user: config.PSQL_USER,
-  host: config.PSQL_HOST,
-  database: config.PSQL_DB,
-  password: config.PSQL_PASS,
-  port: config.PSQL_PORT,
+    user: config.SQL_USER,
+    password: config.SQL_PASSWORD,
+    host: config.PSQL_HOST,
+    //host: "/cloudsql/" + config.INSTANCE_CONNECTION_NAME,
+    database: config.SQL_DATABASE,
+    port: 3306
+
 });
 
 
@@ -33,7 +35,7 @@ router.get('/list', function(req, res, next) {
 
 /* Get a single comic */
 router.get('/:id', function(req, res, next) {
-    res.json({ message: 'hooray! welcome to our api!' });   
+    res.json({ message: 'hooray! welcome to our api!' });
 });
 
 /* Generate a new comic */
