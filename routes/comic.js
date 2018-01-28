@@ -1,11 +1,10 @@
-var express = require('express');
-var app = express();
-var bodyParser = require('body-parser');
-//var pg = require('pg');
-//var connectionString = '';
-//var client = pg.Client(connectionString);
-//client.connect();
+const express = require('express');
+const app = express();
+const bodyParser = require('body-parser');
+const pg = require('pg');
+const config = require('./config.json');
 
+var connection = new pg(config);
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -38,7 +37,7 @@ router.post('/api/comic/create', function(req, res, next) {
     client.query(
         'INSERT INTO Comics.Comic (accountID, title, comicURL, description)
         VALUES ($1, $2, $3, $4)', [
-            'get acc id',
+            req.user,
             req.body.title,
             req.body.url,
             req.body.description
