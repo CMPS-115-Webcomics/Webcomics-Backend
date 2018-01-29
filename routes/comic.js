@@ -56,6 +56,7 @@ router.get('/list', function(req, res, next) {
 
 /* Get a single comic from url */
 router.get('/comicURL/:comicURL', function(req, res, next) {
+    var comicID;
     async.waterfall([
         function(callback) {
             pool.connect((err, client, release) => {
@@ -74,6 +75,7 @@ router.get('/comicURL/:comicURL', function(req, res, next) {
                     console.error('Error executing query', err.stack);
                     callback(err);
                 } else {
+                    comicID = result.rows[0].comicid;
                     var data = result.rows[0];
                     callback(null, client, release, data);
                 }
@@ -82,7 +84,7 @@ router.get('/comicURL/:comicURL', function(req, res, next) {
         function(client, release, data, callback) {
             client.query(`SELECT *
                           FROM Comics.Chapter
-                          WHERE comicID = $1`, [req.params.id], (err, result) => {
+                          WHERE comicID = $1`, [comicID], (err, result) => {
                 if (err) {
                     release();
                     console.error(err.stack);
@@ -96,7 +98,7 @@ router.get('/comicURL/:comicURL', function(req, res, next) {
         function(client, release, data, callback) {
             client.query(`SELECT *
                           FROM Comics.Volume
-                          WHERE comicID = $1`, [req.params.id], (err, result) => {
+                          WHERE comicID = $1`, [comicID], (err, result) => {
                 if (err) {
                     release();
                     console.error(err.stack);
@@ -110,7 +112,7 @@ router.get('/comicURL/:comicURL', function(req, res, next) {
         function(client, release, data, callback) {
             client.query(`SELECT *
                           FROM Comics.Page
-                          WHERE comicID = $1`, [req.params.id], (err, result) => {
+                          WHERE comicID = $1`, [comicID], (err, result) => {
                 if (err) {
                     release();
                     console.error(err.stack);
