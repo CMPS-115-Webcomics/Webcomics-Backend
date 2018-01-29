@@ -43,7 +43,7 @@ router.get('/:id', function(req, res, next) {
         }
         client.query(`SELECT chapterNumber, name
                       FROM Comics.Chapter
-                      WHERE comicID = $1`, [id], (err, result) => {
+                      WHERE comicID = $1`, [req.params.id], (err, result) => {
             if (err) {
                 console.error('Error executing query', err.stack);
                 return;
