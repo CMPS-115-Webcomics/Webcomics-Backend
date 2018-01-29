@@ -3,21 +3,14 @@ const {
   Client
 } = require('pg');
 
-const pool = new Pool({
-  user: 'postgres',
-  host: "localhost",
-  database: 'comics',
-  password:'postgres',
-  port: 5432,
-});
+let config = {
+  user: process.env.SQL_USER || 'postgres',
+  database: process.env.SQL_DATABASE || 'comics',
+  password: process.env.SQL_PASSWORD || 'postgres'
+};
 
+if (process.env.INSTANCE_CONNECTION_NAME && process.env.NODE_ENV === 'production') {
+  config.host = `/cloudsql/${process.env.INSTANCE_CONNECTION_NAME}`;
+}
 
-
-
-module.exports = pool;
-
-/*
-  PGUSER=postgres \
-  PGDATABASE=comics \
-  npm start
-  */
+module.exports = new Pool(config);;

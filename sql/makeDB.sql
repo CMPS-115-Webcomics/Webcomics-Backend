@@ -28,7 +28,7 @@ CREATE TABLE Comics.Volume (
     volumeID            SERIAL PRIMARY KEY,
     comicID             INTEGER NOT NULL,
     volumeNumber        INTEGER,
-    name                VARCHAR(50) UNIQUE,
+    name                VARCHAR(50),
     published           BOOLEAN DEFAULT false,
     UNIQUE( volumeNumber, comicID ),
     FOREIGN KEY (comicID) REFERENCES Comics.Comic(comicID)
@@ -38,7 +38,7 @@ CREATE TABLE Comics.Chapter (
     chapterID           SERIAL PRIMARY KEY,
     volumeID            INTEGER,
     chapterNumber       SERIAL,
-    name                VARCHAR(50) UNIQUE,
+    name                VARCHAR(50),
     published           BOOLEAN DEFAULT false,
     comicID             INTEGER,
     UNIQUE( chapterNumber, volumeID, comicID ),
