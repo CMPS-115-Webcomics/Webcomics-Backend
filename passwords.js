@@ -1,5 +1,4 @@
 
-
 const crypto = require('crypto');
 const { StringDecoder } = require('string_decoder');
 const decoder = new StringDecoder('base64');
@@ -18,7 +17,6 @@ const getHashedPassword = (password) => {
         reject(err);
         return;
       }
-      
       fulfill({
         hash: decoder.write(derivedKey),
         salt: salt
