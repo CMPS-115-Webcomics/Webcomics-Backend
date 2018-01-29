@@ -8,7 +8,7 @@ var router = express.Router();
 const pool = new Pool({
     user: config.SQL_USER,
     password: config.SQL_PASSWORD,
-    host: config.PSQL_HOST,
+    host: config.SQL_HOST,
     //host: "/cloudsql/" + config.INSTANCE_CONNECTION_NAME,
     database: config.SQL_DATABASE,
     port: 3306
@@ -16,47 +16,94 @@ const pool = new Pool({
 });
 
 
-/* Get a list of all comics. */
+/*Get a list of all comics. */
 router.get('/list', function(req, res, next) {
     pool.connect((err, client, release) => {
         if (err) {
-            return console.error("error acquiring client", err.stack);
+            console.error("error acquiring client", err.stack);
+            return;
         }
-        client.query('SELECT NOW()', (err, result) => {
+        client.query(`SELECT title, comicURL, description, thumbnailURL 
+                      FROM Comics.Comic ORDER BY title`, (err, result) => {
             release();
             if (err) {
-                return console.error('Error executing query', err.stack);
+                console.error('Error executing query', err.stack);
+                return;
             }
-            console.log(result.rows);
+            res.status(200).json({data: result});
         });
     });
-    res.json({ message: 'test' });
 });
 
 /* Get a single comic */
 router.get('/:id', function(req, res, next) {
-    res.json({ message: 'hooray! welcome to our api!' });
+    pool.connect((err, client, release) => {
+        if (err) {
+            console.error('Error acquiring client', err.stack);
+        }
+        client.query(`SELECT chapterNumber, name
+                      FROM Comics.Chapter
+                      WHERE comicID = $1`, [id], (err, result) => {
+            if (err) {
+                console.error('Error executing query', err.stack);
+                return;
+            }
+            res.status(200).json({data: result});
+        });
+    });
 });
 
-/* Generate a new comic */
+//Generate a new comic 
 router.post('/create', function(req, res, next) {
 
-    /*
-    pg.connect(connectionString, function(err, client, done){
-        if(err) {
-        done();
-        console.log(err);
-    }
-    client.query(
-        'INSERT INTO Comics.Comic (accountID, title, comicURL, description)
-        VALUES ($1, $2, $3, $4)', [
-            req.user,
+
+    pool.connect((err, client, release) => {
+
+        if (err) {
+            console.error('Error acquiring client', err.stack);
+
+        }
+        client.query(`SELECT title FROM Comics.Comic
+                      WHERE title=$1`, [req.body.title], (err, result) => {
+            if (err) {
+                console.error('Query for title failed', err.stack);
+
+            } else if(result.rowCount > 0){
+                console.error('Title is already taken');
+
+            }
+        });
+        
+        client.query(`SELECT comicURL FROM Comics.Comic
+                      WHERE comicURL=$1`, [req.body.comicURL], (err, result)=>{
+            if (err) {
+                console.error('Query for comicURL failed', err.stack);
+                
+            }else if(result.rowCount > 0){
+                console.error('Comic URL is already taken');
+            }
+        });
+
+        //If any of the above fail, do not do this - TODO
+        client.query(`INSERT INTO Comics.comic 
+                      (accountID, title, comicURL, thumbnailURL, description)
+                      VALUES ($1, $2, $3, $4, $5)`, [
+           //req.user, //actual one to use
+            req.body.user, //testing only
             req.body.title,
-            req.body.url,
+            req.body.comicURL,
+            req.body.thumbnailURL,
             req.body.description
-        ]);
-    */
-    res.json({ message: req.body}); 
+         ], (err, result) => {
+            release();
+            if (err) {
+                console.error('Query cannot be executed', err.stack);
+                res.json({message: 'Query has failed.'});
+            }else{
+                res.sendStatus(201);
+            }  
+        });
+    });
 });
 
 app.use('/', router);
