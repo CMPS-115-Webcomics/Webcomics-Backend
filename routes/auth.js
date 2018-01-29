@@ -42,7 +42,6 @@ router.get('/logininfo', async (req, res, next) => {
         queryDB.on('row', (row) => {
             accountData.push(row);
         })
-        
     }
     catch (e) {
         res.send('error');
