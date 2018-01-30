@@ -36,17 +36,20 @@ router.get('/get/:comicURL', async function (req, res, next) {
         let chapterQuery = await db.query(`
             SELECT *
             FROM Comics.Chapter
-            WHERE comicID = $1`, [comicID]);
+            WHERE comicID = $1
+            ORDER BY chapterNumber`, [comicID]);
         comic.chapters = chapterQuery.rows;
 
         let volumeQuery = await db.query(`SELECT *
             FROM Comics.Volume
-            WHERE comicID = $1`, [comicID]);
+            WHERE comicID = $1
+            ORDER BY volumeNumber`, [comicID]);
         comic.volumes = volumeQuery.rows;
 
         let pageQuery = await db.query(`SELECT *
             FROM Comics.Page
-            WHERE comicID = $1`, [comicID]);
+            WHERE comicID = $1
+            ORDER BY pageNumber`, [comicID]);
         comic.pages = pageQuery.rows;
 
         res.json(comic);
@@ -88,7 +91,7 @@ router.post('/create',
             res.status(201)
                 .json(created.rows[0]);
         } catch (err) {
-            console.log(err);
+            console.error(err);
             if (err.constraint && err.table) {
                 res.status(400)
                     .json({
