@@ -6,12 +6,27 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var db = require('./db');
 
+var cors = require('cors')
+
 var index = require('./routes/index');
 var users = require('./routes/users');
 var auth = require('./routes/auth');
 var comic = require('./routes/comic');
 
 var app = express();
+
+var whitelist = ['https://comichub.io', 'https://silent-thunder-192708.firebaseapp.com/']
+var corsOptions = {
+  origin: function (origin, callback) {
+    if (whitelist.indexOf(origin) !== -1) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  }
+}
+
+app.use(cors(corsOptions));
 
 app.use(function (req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
