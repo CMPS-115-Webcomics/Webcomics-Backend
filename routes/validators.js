@@ -38,6 +38,4 @@ function makeAttributeValidator(params) {
 module.exports = {
     availibilityRoute: makeAviliblityValidator,
     requiredAttributes: makeAttributeValidator
-
-
 }

@@ -31,6 +31,7 @@ router.post('/register', async (req, res, next) => {
         ]);
         res.send('done');
     } catch (e) {
+        console.log(e);
         res.send('error');
     }
 });
