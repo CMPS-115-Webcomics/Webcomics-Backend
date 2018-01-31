@@ -21,7 +21,6 @@ router.get('/list', async function (req, res, next) {
 
 /* Get a single comic from url */
 router.get('/get/:comicURL', async function (req, res, next) {
-    console.log(req.params);
     try {
         let comicQuery = await db.query('SELECT * FROM Comics.Comic WHERE comicURL = $1', [req.params.comicURL]);
 
