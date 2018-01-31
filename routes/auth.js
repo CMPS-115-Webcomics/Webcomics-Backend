@@ -3,11 +3,6 @@ const passwords = require('../passwords.js');
 const express = require('express');
 const router = express.Router();
 
-/* Register new user */
-router.post('/', async(req, res, next) => {
-    res.send('done');
-});
-
 async function isUsernameAvalible(username) {
     let res = await db.query(`SELECT username FROM Comics.Account WHERE username = $1;`, [username]);
     return res.rowCount === 0;
@@ -27,7 +22,7 @@ function hasRequiredAttributes(body, params, res) {
     }
     if (missing.length === 0)
         return true;
-    res.status(400).type('application/json').send({'message': 'Request lacks required parameter(s).', 'missing': missing});
+    res.status(400).type('application/json').send({ 'message': 'Request lacks required parameter(s).', 'missing': missing });
     return false;
 }
 
@@ -45,36 +40,42 @@ router.post('/register', async (req, res, next) => {
             password,
             salt
         ) VALUES ($1, $2, $3, $4, $5, $6);`, [
-            req.body.username,
-            req.body.profileURL,
-            req.body.email,
-            '',
-            passwordData.hash,
-            passwordData.salt
-        ]);
+                req.body.username,
+                req.body.profileURL,
+                req.body.email,
+                '',
+                passwordData.hash,
+                passwordData.salt
+            ]);
         const idQuery = await db.query('SELECT accountID FROM Comics.Account WHERE username = $1', [req.body.username]);
-        res.status(201).type('application/json').send(passwords.createUserToken(idQuery.rows[0].accountID))
+        res.status(201)
+            .json({ token: passwords.createUserToken(idQuery.rows[0].accountID) });
     } catch (e) {
-        console.error(e);
-        res.status(500).send('Could not register user');
-    }
+    console.error(e);
+    res.status(500).send('Could not register user');
+}
 });
 
-router.get('/login', async (req, res, next) => {
-    try{
-        const queryDB = await db.query('SELECT password, salt. accountID FROM Comics.Account WHERE username = $1;', [req.body.username]);
-        if(queryDB.rowCount == 0){
+router.post('/login', async (req, res, next) => {
+    try {
+        const queryDB = await db.query('SELECT password, salt, accountID FROM Comics.Account WHERE username = $1;', [req.body.username]);
+        if (queryDB.rowCount == 0) {
             res.status(400).send('User does not Exist');
             return;
         }
         const targetUser = queryDB.rows[0];
-        if((await passwords.checkPassword(req.body.password, targetUser.password, targetUser.salt))){
-            res.status(200).type('application/json').send(passwords.createUserToken(targetUser.accountID));
+        if (await passwords.checkPassword(req.body.password, targetUser.password, targetUser.salt)) {
+            res.status(200)
+                .json(
+                {
+                    token: passwords.createUserToken(targetUser.accountid)
+                });
             return;
         }
         res.status(403).send('Password Incorrect');
     }
     catch (e) {
+        console.error(e);
         res.status(500).send('Could not login user')
     }
 });
@@ -123,4 +124,9 @@ router.get('/usernameAvalible', async (req, res) => {
             .send('Internal Failure');
     }
 });
+
+router.get('/testAuth', passwords.authorize, async (req, res) => {
+    res.json(req.user);
+});
+
 module.exports = router;

@@ -18,6 +18,8 @@ CREATE TABLE Comics.Comic (
     accountID           INTEGER NOT NULL,
     title               VARCHAR(50) UNIQUE,
     comicURL            VARCHAR(30) UNIQUE,
+    thumbnailURL        VARCHAR(255),
+    published           BOOLEAN DEFAULT false,
     description         VARCHAR(500),
     FOREIGN KEY (accountID) REFERENCES Comics.Account(accountID)
 );
@@ -26,7 +28,8 @@ CREATE TABLE Comics.Volume (
     volumeID            SERIAL PRIMARY KEY,
     comicID             INTEGER NOT NULL,
     volumeNumber        INTEGER,
-    name                VARCHAR(50) UNIQUE,
+    name                VARCHAR(50),
+    published           BOOLEAN DEFAULT false,
     UNIQUE( volumeNumber, comicID ),
     FOREIGN KEY (comicID) REFERENCES Comics.Comic(comicID)
 );
@@ -35,7 +38,8 @@ CREATE TABLE Comics.Chapter (
     chapterID           SERIAL PRIMARY KEY,
     volumeID            INTEGER,
     chapterNumber       SERIAL,
-    name                VARCHAR(50) UNIQUE,
+    name                VARCHAR(50),
+    published           BOOLEAN DEFAULT false,
     comicID             INTEGER,
     UNIQUE( chapterNumber, volumeID, comicID ),
     FOREIGN KEY (volumeID) REFERENCES Comics.Volume(volumeID),
@@ -43,14 +47,15 @@ CREATE TABLE Comics.Chapter (
 );
 
 CREATE TABLE Comics.Page (
-    pageId              SERIAL PRIMARY KEY,
+    pageID              SERIAL PRIMARY KEY,
     pageNumber          SERIAL,
     chapterID           INTEGER,
     comicID             INTEGER,
-    author              INTEGER,
+    authorID            INTEGER,
     altText             VARCHAR(300),
-    imgURL              VARCHAR(128),
+    imgURL              VARCHAR(255),
+    published           BOOLEAN DEFAULT false,
     UNIQUE ( pageNumber, comicID, chapterID ),
-    FOREIGN KEY (chapterID) REFERENCES Comics.chapterID(chapterID),
+    FOREIGN KEY (chapterID) REFERENCES Comics.Chapter(chapterID),
     FOREIGN KEY (comicID) REFERENCES Comics.Comic(comicID)
 );

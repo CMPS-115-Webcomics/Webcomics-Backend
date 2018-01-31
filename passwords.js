@@ -1,8 +1,16 @@
 const crypto = require('crypto');
 const { StringDecoder } = require('string_decoder');
-const decoder = new StringDecoder('base64');
 const jwt = require('jsonwebtoken');
 
+const expirationTime = 60 * 60;
+
+let secret;
+if (process.env.JWT_SECRET) {
+  secret = process.env.JWT_SECRET;
+} else {
+  secret = 'TestSecret';
+  console.warn('No JWT_SECRET enviroment variable found. Using test secret. Do not use this in production.');
+}
 
 
 const genRandomString = function (length) {
@@ -11,20 +19,22 @@ const genRandomString = function (length) {
     .slice(0, length); /** return required number of characters */
 };
 
+
+const signJWT = (payload) => {
+  return jwt.sign(payload, secret, {
+      expiresIn: expirationTime
+  });
+}
+
 const createUserToken = (accountID) => {
-  return this.signJWT({accountID});
+  console.log({accountID: accountID});
+  return signJWT({accountID: accountID});
 }
 
 const createEmailVerificationToken = (accountID) => {
-  return this.signJWT({accountID, email});
+  return signJWT({accountID, email});
 }
-let secret;
-if (process.env.JWT_SECRET) {
-  secret = process.env.JWT_SECRET;
-} else {
-  secret = 'TestSecret';
-  console.warn('No JWT_SECRET enviroment variable found. Using test secret. Do not use this in production.');
-}
+
 
 const needsAuth = (req, res, next) => {
   try {
@@ -44,9 +54,8 @@ const getHashedPassword = (password) => {
         reject(err);
         return;
       }
-      
       fulfill({
-        hash: decoder.write(derivedKey),
+        hash: derivedKey.toString('base64'),
         salt: salt
       });
     });
@@ -60,7 +69,7 @@ const checkPassword = (candidate, hash, salt) => {
         reject(err);
         return;
       }
-      fulfill(decoder.write(derivedKey) === hash);
+      fulfill(derivedKey.toString('base64') === hash);
     });
   });
 };

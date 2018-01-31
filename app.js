@@ -6,6 +6,8 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var db = require('./db');
 
+var cors = require('cors')
+
 var index = require('./routes/index');
 var users = require('./routes/users');
 var auth = require('./routes/auth');
@@ -13,10 +15,25 @@ var comic = require('./routes/comic');
 
 var app = express();
 
+var whitelist = new Set(['http://localhost:4200', 'https://comichub.io', 'https://silent-thunder-192708.firebaseapp.com']);
+var corsOptions = {
+  origin: function (origin, callback) {
+    if (whitelist.has(origin)) {
+      callback(null, true)
+    } else {
+      console.log(origin);
+      callback(new Error('Not allowed by CORS'))
+    }
+  }
+}
+
+app.use(cors());
 
 app.use(logger('dev'));
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.urlencoded({
+  extended: false
+}));
 app.use(cookieParser());
 
 app.use('/', index);
@@ -25,21 +42,23 @@ app.use('/api/auth', auth);
 app.use('/api/comics', comic);
 
 // catch 404 and forward to error handler
-app.use(function(req, res, next) {
+app.use(function (req, res, next) {
   var err = new Error('Not Found');
   err.status = 404;
   next(err);
 });
 
 // error handler
-app.use(function(err, req, res, next) {
+app.use(function (err, req, res, next) {
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
 
+  console.error(err);
+
   // render the error page
-  res.status(err.status || 500);
-  res.render('error');
+  res.status(err.status || 500)
+     .send(err);
 });
 
 module.exports = app;
