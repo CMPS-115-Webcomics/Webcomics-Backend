@@ -1,5 +1,4 @@
 const crypto = require('crypto');
-const { StringDecoder } = require('string_decoder');
 const jwt = require('jsonwebtoken');
 
 const expirationTime = 60 * 60;
@@ -12,37 +11,42 @@ if (process.env.JWT_SECRET) {
   console.warn('No JWT_SECRET enviroment variable found. Using test secret. Do not use this in production.');
 }
 
-
 const genRandomString = function (length) {
   return crypto.randomBytes(Math.ceil(length / 2))
-    .toString('hex') /** convert to hexadecimal format */
-    .slice(0, length); /** return required number of characters */
+    .toString('hex') 
+    .slice(0, length); 
 };
-
 
 const signJWT = (payload) => {
   return jwt.sign(payload, secret, {
-      expiresIn: expirationTime
+    expiresIn: expirationTime
   });
 }
 
 const createUserToken = (accountID) => {
-  console.log({accountID: accountID});
-  return signJWT({accountID: accountID});
+  console.log({
+    accountID: accountID
+  });
+  return signJWT({
+    accountID: accountID
+  });
 }
 
 const createEmailVerificationToken = (accountID) => {
-  return signJWT({accountID, email});
+  return signJWT({
+    accountID,
+    email
+  });
 }
-
 
 const needsAuth = (req, res, next) => {
   try {
-      req.user = jwt.verify(req.header('token'), secret);
-      next();
+    console.log(req.header('token'));
+    req.user = jwt.verify(req.header('token'), secret);
+    next();
   } catch (e) {
-      res.status(401)
-          .send('Requires Authentication');
+    res.status(401)
+      .send('Requires Authentication');
   }
 }
 
@@ -74,11 +78,10 @@ const checkPassword = (candidate, hash, salt) => {
   });
 };
 
-
 module.exports = {
-    getHashedPassword: getHashedPassword,
-    checkPassword: checkPassword,
-    createUserToken: createUserToken,
-    createEmailVerificationToken: createEmailVerificationToken,
-    authorize: needsAuth
+  getHashedPassword: getHashedPassword,
+  checkPassword: checkPassword,
+  createUserToken: createUserToken,
+  createEmailVerificationToken: createEmailVerificationToken,
+  authorize: needsAuth
 }

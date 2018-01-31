@@ -12,6 +12,7 @@ var index = require('./routes/index');
 var users = require('./routes/users');
 var auth = require('./routes/auth');
 var comic = require('./routes/comic');
+var availability = require('./routes/availability');
 
 var app = express();
 
@@ -27,7 +28,7 @@ var corsOptions = {
   }
 }
 
-app.use(cors());
+app.use(cors(corsOptions));
 
 app.use(logger('dev'));
 app.use(bodyParser.json());
@@ -40,6 +41,7 @@ app.use('/', index);
 app.use('/api/users', users);
 app.use('/api/auth', auth);
 app.use('/api/comics', comic);
+app.use('/api/availability', availability);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

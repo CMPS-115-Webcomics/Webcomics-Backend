@@ -4,6 +4,7 @@ const router = express.Router();
 const db = require('../db');
 const validators = require('./validators');
 const upload = require('../upload');
+const passwords = require('../passwords');
 
 
 /*Get a list of all comics. */
@@ -18,6 +19,23 @@ router.get('/list', async function (req, res, next) {
         res.sendStatus(500);
     }
 });
+
+/*Get a list of owned comics. */
+router.get('/mycomics', passwords.authorize, async function (req, res, next) {
+    try {
+        console.log(req.user.accountID);
+        let result = await db.query(`
+            SELECT comicID, accountID, title, comicURL, description, thumbnailURL 
+            FROM Comics.Comic
+            WHERE accountID = $1
+            ORDER BY title`, [req.user.accountID]);
+        res.json(result.rows);
+    } catch (err) {
+        console.error(err);
+        res.sendStatus(500);
+    }
+});
+
 
 /* Get a single comic from url */
 router.get('/get/:comicURL', async function (req, res, next) {
@@ -60,12 +78,9 @@ router.get('/get/:comicURL', async function (req, res, next) {
 });
 
 
-// Check if unique attributes are avilible
-router.get('/titleAvailble/:title', validators.availibilityRoute('Comic', 'title'));
-router.get('/urlAvilbible/:comicURL', validators.availibilityRoute('Comic', 'comicURL'));
-
 //Generate a new comic 
 router.post('/create',
+    passwords.authorize,
     upload.multer.single('thumbnail'),
     validators.requiredAttributes(['title', 'comicURL', 'description']),
     upload.sendUploadToGCS,
@@ -81,7 +96,7 @@ router.post('/create',
                 VALUES ($1, $2, $3, $4, $5)
                 RETURNING comicID;
                 `, [
-                1, //testing only
+                req.user.accountID,
                 req.body.title,
                 req.body.comicURL,
                 req.file.cloudStoragePublicUrl,
@@ -104,7 +119,9 @@ router.post('/create',
     });
 
 router.post('/addVolume',
+    passwords.authorize,
     validators.requiredAttributes(['comicID']),
+    validators.canModifyComic,
     async function (req, res, next) {
         try {
             let created = await db.query(`
@@ -133,7 +150,9 @@ router.post('/addVolume',
 
 
 router.post('/addChapter',
+    passwords.authorize,
     validators.requiredAttributes(['comicID']),
+    validators.canModifyComic,
     async function (req, res, next) {
         try {
             let chapterInsertion = await db.query(`
@@ -164,8 +183,10 @@ router.post('/addChapter',
 
 router.post(
     '/addPage',
+    passwords.authorize,
     upload.multer.single('file'),
     validators.requiredAttributes(['comicID', 'altText']),
+    validators.canModifyComic,
     upload.sendUploadToGCS,
     async (req, res, next) => {
         if (!req.file || !req.file.cloudStoragePublicUrl) {
