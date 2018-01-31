@@ -3,3 +3,4 @@ node_modules
 npm-debug.log
 app.yaml
 service-account.json
+cloud_sql_proxy

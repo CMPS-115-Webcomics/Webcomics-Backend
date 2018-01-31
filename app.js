@@ -15,12 +15,13 @@ var comic = require('./routes/comic');
 
 var app = express();
 
-var whitelist = ['https://comichub.io', 'https://silent-thunder-192708.firebaseapp.com/']
+var whitelist = new Set(['http://localhost:4200', 'https://comichub.io', 'https://silent-thunder-192708.firebaseapp.com']);
 var corsOptions = {
   origin: function (origin, callback) {
-    if (whitelist.indexOf(origin) !== -1) {
+    if (whitelist.has(origin)) {
       callback(null, true)
     } else {
+      console.log(origin);
       callback(new Error('Not allowed by CORS'))
     }
   }
