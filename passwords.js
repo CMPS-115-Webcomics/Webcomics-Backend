@@ -13,8 +13,8 @@ if (process.env.JWT_SECRET) {
 
 const genRandomString = function (length) {
   return crypto.randomBytes(Math.ceil(length / 2))
-    .toString('hex') 
-    .slice(0, length); 
+    .toString('hex')
+    .slice(0, length);
 };
 
 const signJWT = (payload) => {
@@ -24,9 +24,6 @@ const signJWT = (payload) => {
 }
 
 const createUserToken = (accountID) => {
-  console.log({
-    accountID: accountID
-  });
   return signJWT({
     accountID: accountID
   });
@@ -34,15 +31,15 @@ const createUserToken = (accountID) => {
 
 const createEmailVerificationToken = (accountID) => {
   return signJWT({
-    accountID,
-    email
+    accountID: accountID,
+    email: true
   });
 }
 
 const needsAuth = (req, res, next) => {
   try {
-    console.log(req.header('token'));
     req.user = jwt.verify(req.header('token'), secret);
+    console.log('user', req.user); 
     next();
   } catch (e) {
     res.status(401)

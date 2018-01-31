@@ -4,7 +4,6 @@ function makeAviliblityValidator(table, attribute) {
     return async (req, res) => {
         try {
             const query = await db.query(`SELECT ${attribute} FROM Comics.${table} WHERE ${attribute}=$1`, [req.params[attribute]]);
-            console.log(req.params, req.query[attribute], query.rowCount === 0)
             res.json({
                 availbile: query.rowCount === 0
             });
@@ -18,7 +17,7 @@ function makeAviliblityValidator(table, attribute) {
 async function canModifyComic(req, res, next) {
     let ownerQuery = await db.query(`SELECT accountID from Comics.Comic WHERE comicID = $1`, [req.body.comicID]);
     if (ownerQuery.rowCount === 0) {
-        req.status(400)
+        res.status(400)
             .send({
                 error: 'No such comic',
                 comicId: req.body.comicID
@@ -26,7 +25,7 @@ async function canModifyComic(req, res, next) {
         return;
     }
     if (ownerQuery.rows[0].accountid !== req.user.accountID) {
-        req.status(403)
+        res.status(403)
             .send({
                 error: 'You don\'t own that comic',
                 comicId: req.body.comicID

@@ -1,8 +1,11 @@
 const db = require('../db.js');
 const validators = require('./validators');
 const passwords = require('../passwords.js');
+const email = require('../email');
+
 const express = require('express');
 const router = express.Router();
+
 
 router.post('/register', validators.requiredAttributes(['username', 'email', 'password']), async (req, res, next) => {
     try {
@@ -16,7 +19,7 @@ router.post('/register', validators.requiredAttributes(['username', 'email', 'pa
             password,
             salt
         ) VALUES ($1, $2, $3, $4, $5, $6)
-        RETURNING accountID;`, [
+        RETURNING accountID, email;`, [
             req.body.username,
             req.body.profileURL,
             req.body.email.toLowerCase(),
@@ -24,9 +27,11 @@ router.post('/register', validators.requiredAttributes(['username', 'email', 'pa
             passwordData.hash,
             passwordData.salt
         ]);
+        let result = queryResult.rows[0];
+        email.sendVerificationEmail(result.email, result.accountid);
         res.status(201)
             .json({
-                token: passwords.createUserToken(queryResult.rows[0].accountid)
+                token: passwords.createUserToken(result.accountid)
             });
     } catch (e) {
         console.error(e);
@@ -64,20 +69,20 @@ router.post('/login', validators.requiredAttributes(['username', 'password']), a
     }
 });
 
-router.post('/verifyEmail', passwords.authorize, async (req, res) => {
+router.post('/verifyEmail', passwords.authorize, async (req, res, next) => {
     try {
         if (req.user.email && req.user.accountID) {
             await db.query(`
-                UPDATE CCG.Account
+                UPDATE Comics.Account
                 SET emailVerified = true
                 WHERE accountID = $1;
             `, [req.user.accountID]);
-            res.sendStatus(200);
+            res.status(200).json({message: 'done'});
         } else {
             res.sendStatus(403);
         }
     } catch (err) {
-        res.sendStatus(500);
+        next(err);
     }
 });
 

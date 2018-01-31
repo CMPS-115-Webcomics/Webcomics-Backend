@@ -23,7 +23,6 @@ router.get('/list', async function (req, res, next) {
 /*Get a list of owned comics. */
 router.get('/mycomics', passwords.authorize, async function (req, res, next) {
     try {
-        console.log(req.user.accountID);
         let result = await db.query(`
             SELECT comicID, accountID, title, comicURL, description, thumbnailURL 
             FROM Comics.Comic
@@ -135,7 +134,7 @@ router.post('/addVolume',
             res.status(201)
                 .json(created.rows[0]);
         } catch (err) {
-            console.log(err);
+            console.error(err);
             if (err.constraint) {
                 res.status(400)
                     .json({
@@ -168,7 +167,7 @@ router.post('/addChapter',
             res.status(201)
                 .json(chapterInsertion.rows[0]);
         } catch (err) {
-            console.log(err);
+            console.error(err);
             if (err.constraint) {
                 res.status(400)
                     .json({
@@ -207,7 +206,7 @@ router.post(
 
             res.status(201).json();
         } catch (err) {
-            console.log(err);
+            console.error(err);
             if (err.constraint) {
                 res.status(400)
                     .json({
