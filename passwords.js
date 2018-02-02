@@ -1,7 +1,9 @@
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 
-const expirationTime = 60 * 60;
+const emailVerificationExpirationTime = "7d";
+const passwordResetExpirationTime = "1h";
+const userTokenExpirationTime = "7d";
 
 let secret;
 if (process.env.JWT_SECRET) {
@@ -17,7 +19,7 @@ const genRandomString = function (length) {
     .slice(0, length);
 };
 
-const signJWT = (payload) => {
+const signJWT = (payload, expirationTime) => {
   return jwt.sign(payload, secret, {
     expiresIn: expirationTime
   });
@@ -26,21 +28,21 @@ const signJWT = (payload) => {
 const createUserToken = (accountID) => {
   return signJWT({
     accountID: accountID
-  });
+  }, userTokenExpirationTime);
 }
 
 const createEmailVerificationToken = (accountID) => {
   return signJWT({
     accountID: accountID,
     email: true
-  });
+  }, emailVerificationExpirationTime);
 }
 
 const createPasswordResetToken = (accountID) => {
   return signJWT({
     accountID: accountID,
     password: true
-  });
+  }, passwordResetExpirationTime);
 }
 
 const needsAuth = (req, res, next) => {
@@ -87,5 +89,6 @@ module.exports = {
   checkPassword: checkPassword,
   createUserToken: createUserToken,
   createEmailVerificationToken: createEmailVerificationToken,
+  createPasswordResetToken: createPasswordResetToken,
   authorize: needsAuth
 }

@@ -6,6 +6,62 @@ const email = require('../email');
 const express = require('express');
 const router = express.Router();
 
+router.post('/password-reset', passwords.authorize, validators.requiredAttributes(['password']), async (req, res, next) => {
+    try {
+        const passwordData = await passwords.getHashedPassword(req.body.password);
+        console.log(passwordData);
+        const queryResult = await db.query(`
+            UPDATE Comics.Account SET password = $1, salt = $2 WHERE accountID = $3`, [
+                passwordData.hash,
+                passwordData.salt,
+                req.user.accountID
+            ]
+        );
+        console.log(queryResult);
+
+        res.status(200)
+            .json({
+                token: passwords.createUserToken(req.user.accountID)
+            });
+    } catch (e) {
+        console.error(e);
+        if (err.constraint) {
+            res.status(400)
+                .json({
+                    errorType: 'constraint-error',
+                    constraint: err.constraint
+                });
+            return;
+        }
+        res.status(500);
+    }
+});
+
+router.post('/password-reset-request', validators.requiredAttributes(['username']), async (req, res, next) => {
+    try {
+        const queryResult = await db.query(`
+            SELECT email, accountID FROM Comics.Account WHERE username = $1`,
+            [req.body.username]
+        );
+        let result = queryResult.rows[0];
+        email.sendPasswordResetEmail(result.email, result.accountid);
+        res.status(201)
+            .json({
+                token: passwords.createUserToken(result.accountid)
+            });
+    } catch (e) {
+        console.error(e);
+        if (err.constraint) {
+            res.status(400)
+                .json({
+                    errorType: 'constraint-error',
+                    constraint: err.constraint
+                });
+            return;
+        }
+        res.status(500);
+    }
+});
 
 router.post('/register', validators.requiredAttributes(['username', 'email', 'password']), async (req, res, next) => {
     try {
