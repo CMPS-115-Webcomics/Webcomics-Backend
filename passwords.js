@@ -36,6 +36,13 @@ const createEmailVerificationToken = (accountID) => {
   });
 }
 
+const createPasswordResetToken = (accountID) => {
+  return signJWT({
+    accountID: accountID,
+    password: true
+  });
+}
+
 const needsAuth = (req, res, next) => {
   try {
     req.user = jwt.verify(req.header('token'), secret);

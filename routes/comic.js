@@ -6,7 +6,6 @@ const validators = require('./validators');
 const upload = require('../upload');
 const passwords = require('../passwords');
 
-
 /*Get a list of all comics. */
 router.get('/list', async function (req, res, next) {
     try {
