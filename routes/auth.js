@@ -6,60 +6,49 @@ const email = require('../email');
 const express = require('express');
 const router = express.Router();
 
-router.post('/password-reset', passwords.authorize, validators.requiredAttributes(['password']), async (req, res, next) => {
+router.post('/verifyReset', passwords.authorize, validators.requiredAttributes(['password']), async (req, res, next) => {
     try {
         const passwordData = await passwords.getHashedPassword(req.body.password);
-        console.log(passwordData);
         const queryResult = await db.query(`
-            UPDATE Comics.Account SET password = $1, salt = $2 WHERE accountID = $3`, [
-                passwordData.hash,
-                passwordData.salt,
-                req.user.accountID
-            ]
-        );
-        console.log(queryResult);
+            UPDATE Comics.Account 
+            SET password = $1, salt = $2 
+            WHERE accountID = $3
+            RETURNING username;`, [
+            passwordData.hash,
+            passwordData.salt,
+            req.user.accountID
+        ]);
 
         res.status(200)
             .json({
-                token: passwords.createUserToken(req.user.accountID)
+                token: passwords.createUserToken(req.user.accountID),
+                username: queryResult.rows[0].username
             });
     } catch (e) {
-        console.error(e);
-        if (err.constraint) {
-            res.status(400)
-                .json({
-                    errorType: 'constraint-error',
-                    constraint: err.constraint
-                });
-            return;
-        }
-        res.status(500);
+        next(err);
     }
 });
 
-router.post('/password-reset-request', validators.requiredAttributes(['username']), async (req, res, next) => {
+router.post('/requestReset', validators.requiredAttributes(['usernameOrEmail']), async (req, res, next) => {
     try {
         const queryResult = await db.query(`
-            SELECT email, accountID FROM Comics.Account WHERE username = $1`,
-            [req.body.username]
-        );
-        let result = queryResult.rows[0];
-        email.sendPasswordResetEmail(result.email, result.accountid);
-        res.status(201)
-            .json({
-                token: passwords.createUserToken(result.accountid)
-            });
-    } catch (e) {
-        console.error(e);
-        if (err.constraint) {
+            SELECT email, accountID 
+            FROM Comics.Account 
+            WHERE username = $1
+               OR email    = $1`, [req.body.usernameOrEmail]);
+        if (queryResult.rowCount === 0) {
             res.status(400)
                 .json({
-                    errorType: 'constraint-error',
-                    constraint: err.constraint
+                    account: req.body.usernameOrEmail,
+                    message: 'No such account'
                 });
             return;
         }
-        res.status(500);
+        let result = queryResult.rows[0];
+        email.sendPasswordResetEmail(result.email, result.accountid);
+        res.json({message: 'Reset email sent'});
+    } catch (err) {
+        next(err);
     }
 });
 
@@ -87,41 +76,40 @@ router.post('/register', validators.requiredAttributes(['username', 'email', 'pa
         email.sendVerificationEmail(result.email, result.accountid);
         res.status(201)
             .json({
-                token: passwords.createUserToken(result.accountid)
+                token: passwords.createUserToken(result.accountid),
+                username: req.body.username
             });
     } catch (e) {
-        console.error(e);
-        if (err.constraint) {
-            res.status(400)
-                .json({
-                    errorType: 'constraint-error',
-                    constraint: err.constraint
-                });
-            return;
-        }
-        res.status(500);
+        next(e);
     }
 });
 
-router.post('/login', validators.requiredAttributes(['username', 'password']), async (req, res, next) => {
+router.post('/login', validators.requiredAttributes(['usernameOrEmail', 'password']), async (req, res, next) => {
     try {
-        const queryDB = await db.query('SELECT password, salt, accountID FROM Comics.Account WHERE username = $1;', [req.body.username]);
-        if (queryDB.rowCount == 0) {
-            res.status(400).send('User does not Exist');
-            return;
+        const queryResult = await db.query(`
+            SELECT password, salt, accountID, username
+            FROM Comics.Account 
+            WHERE username = $1
+               OR email    = $1`, [req.body.usernameOrEmail]);
+        if (queryResult.rowCount == 0) {
+            res.status(400)
+                .json({
+                    account: req.body.usernameOrEmail,
+                    message: 'No such account'
+                });
         }
-        const targetUser = queryDB.rows[0];
+        const targetUser = queryResult.rows[0];
         if (await passwords.checkPassword(req.body.password, targetUser.password, targetUser.salt)) {
             res.status(200)
                 .json({
-                    token: passwords.createUserToken(targetUser.accountid)
+                    token: passwords.createUserToken(targetUser.accountid),
+                    username: targetUser.username
                 });
             return;
         }
         res.status(403).send('Password Incorrect');
     } catch (e) {
-        console.error(e);
-        res.status(500).send('Could not login user')
+        next(e);
     }
 });
 
@@ -133,7 +121,9 @@ router.post('/verifyEmail', passwords.authorize, async (req, res, next) => {
                 SET emailVerified = true
                 WHERE accountID = $1;
             `, [req.user.accountID]);
-            res.status(200).json({message: 'done'});
+            res.status(200).json({
+                message: 'done'
+            });
         } else {
             res.sendStatus(403);
         }

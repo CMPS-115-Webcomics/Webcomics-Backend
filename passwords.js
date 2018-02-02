@@ -48,7 +48,6 @@ const createPasswordResetToken = (accountID) => {
 const needsAuth = (req, res, next) => {
   try {
     req.user = jwt.verify(req.header('token'), secret);
-    console.log('user', req.user); 
     next();
   } catch (e) {
     res.status(401)

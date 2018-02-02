@@ -5,15 +5,15 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 const fromAddress = 'noreply@comichub.io';
 
-function sendPasswordResetEmail(targetEmail, accountID) {
+async function sendPasswordResetEmail(targetEmail, accountID) {
     const token = passwords.createPasswordResetToken(accountID);
-    const url = `https://comichub.io/password-reset/${token}`;
+    const url = `https://comichub.io/reset/${token}`;
     try {
         await sgMail.send({
             to: targetEmail,
             from: fromAddress,
             subject: 'Password Reset',
-            text: `You requested a password reset for ComicHub, change your password by clicking  ${url}`,
+            text: `You requested a password reset for ComicHub, change your password by visiting ${url}`,
             html: `
 <p>You requested a password reset for ComicHub.</p>
 <p>Change your password by clicking <a href="${url}" target="_blank">${url}</a>.</p>`,
@@ -42,5 +42,6 @@ async function sendVerificationEmail(targetEmail, accountID) {
 }
 
 module.exports = {
-    sendVerificationEmail: sendVerificationEmail
+    sendVerificationEmail: sendVerificationEmail,
+    sendPasswordResetEmail: sendPasswordResetEmail
 }

@@ -57,9 +57,16 @@ app.use(function (err, req, res, next) {
 
   console.error(err);
 
-  // render the error page
-  res.status(err.status || 500)
-     .send(err);
+  if (err.constraint) {
+    res.status(400)
+      .json({
+        errorType: 'constraint-error',
+        constraint: err.constraint
+      });
+    return;
+  }
+
+  res.sendStatus(err.status || 500);
 });
 
 module.exports = app;
