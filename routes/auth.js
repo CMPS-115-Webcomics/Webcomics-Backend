@@ -153,7 +153,7 @@ router.post('/ban', passwords.authorize, async(req,res) => {
 router.get('/banstate', async(req, res) => {
     try {
         if (!hasRequiredAttributes(req.body, ['username'], res)) return;
-        const ok = await isUsernameAvalible(req.body.username);
+        const ok = await isBanned(req.body.username);
         res.status(200)
             .type('application/json')
             .send({ ok: ok });
