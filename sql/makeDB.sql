@@ -21,7 +21,7 @@ CREATE TABLE Comics.Comic (
     thumbnailURL        VARCHAR(255),
     published           BOOLEAN DEFAULT false,
     description         VARCHAR(500),
-    FOREIGN KEY (accountID) REFERENCES Comics.Account(accountID)
+    FOREIGN KEY (accountID) REFERENCES Comics.Account(accountID) ON DELETE CASCADE
 );
 
 CREATE TABLE Comics.Volume (
@@ -31,7 +31,7 @@ CREATE TABLE Comics.Volume (
     name                VARCHAR(50),
     published           BOOLEAN DEFAULT false,
     UNIQUE( volumeNumber, comicID ),
-    FOREIGN KEY (comicID) REFERENCES Comics.Comic(comicID)
+    FOREIGN KEY (comicID) REFERENCES Comics.Comic(comicID) ON DELETE CASCADE
 );
 
 CREATE TABLE Comics.Chapter (
@@ -42,8 +42,8 @@ CREATE TABLE Comics.Chapter (
     published           BOOLEAN DEFAULT false,
     comicID             INTEGER,
     UNIQUE( chapterNumber, volumeID, comicID ),
-    FOREIGN KEY (volumeID) REFERENCES Comics.Volume(volumeID),
-    FOREIGN KEY (comicID) REFERENCES Comics.Comic(comicID)
+    FOREIGN KEY (volumeID) REFERENCES Comics.Volume(volumeID) ON DELETE CASCADE,
+    FOREIGN KEY (comicID) REFERENCES Comics.Comic(comicID) ON DELETE CASCADE
 );
 
 CREATE TABLE Comics.Page (
@@ -56,6 +56,6 @@ CREATE TABLE Comics.Page (
     imgURL              VARCHAR(255),
     published           BOOLEAN DEFAULT false,
     UNIQUE ( pageNumber, comicID, chapterID ),
-    FOREIGN KEY (chapterID) REFERENCES Comics.Chapter(chapterID),
-    FOREIGN KEY (comicID) REFERENCES Comics.Comic(comicID)
+    FOREIGN KEY (chapterID) REFERENCES Comics.Chapter(chapterID) ON DELETE CASCADE,
+    FOREIGN KEY (comicID) REFERENCES Comics.Comic(comicID) ON DELETE CASCADE
 );
