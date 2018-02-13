@@ -8,6 +8,11 @@ async function isUsernameAvalible(username) {
     return res.rowCount === 0;
 }
 
+async function isBanned(username) {
+    let res = await IDBDatabase.query('SELECT username FROM Comics.Account WHERE username = $1 AND banned = false', [username]);
+    return res.rowCount === 0;
+}
+
 async function isEmailAvalible(email) {
     let res = await db.query(`SELECT email FROM Comics.Account WHERE email = $1;`, [email]);
     return res.rowCount === 0;
@@ -128,5 +133,34 @@ router.get('/usernameAvalible', async (req, res) => {
 router.get('/testAuth', passwords.authorize, async (req, res) => {
     res.json(req.user);
 });
+
+router.post('/ban', passwords.authorize, async(req,res) => {
+    try {
+        if (req.user.email) {
+            await db.query(`
+                UPDATE table_name
+                SET banned = true
+                WHERE accountID = $1;
+            `, [req.user.accountID]);
+            res.sendStatus(200);
+        } else {
+            res.sendStatus(403);
+        }
+    } catch (err) {
+        res.sendStatus(500);
+    }
+})
+router.get('/banstate', async(req, res) => {
+    try {
+        if (!hasRequiredAttributes(req.body, ['username'], res)) return;
+        const ok = await isUsernameAvalible(req.body.username);
+        res.status(200)
+            .type('application/json')
+            .send({ ok: ok });
+    } catch (err) {
+        res.status(500)
+            .send('Internal Failure');
+    }
+})
 
 module.exports = router;
