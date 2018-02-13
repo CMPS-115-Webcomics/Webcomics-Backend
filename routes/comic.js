@@ -274,9 +274,9 @@ router.delete('/deleteVolume',
             deleteImages(urlQuery.rows);
 
             await db.query(`
-                DELETE FROM Comics.Chapter
-                WHERE chapterID = $1`, [req.body.chapterID]);
-            res.status(200).send('Chapter was deleted.');
+                DELETE FROM Comics.Volume
+                WHERE volumeID = $1`, [req.body.volumeID]);
+            res.status(200).send('Volume was deleted.');
 
         } catch (err) {
             console.error(err);
