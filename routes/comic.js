@@ -89,7 +89,7 @@ router.post('/create',
         }
         try {
             let created = await db.query(`
-                INSERT INTO Comics.comic 
+                INSERT INTO Comics.Comic 
                 (accountID, title, comicURL, thumbnailURL, description)
                 VALUES ($1, $2, $3, $4, $5)
                 RETURNING comicID;
@@ -125,7 +125,7 @@ router.post('/addVolume',
             let created = await db.query(`
                 INSERT INTO Comics.Volume 
                 (name, comicID)
-                VALUES ($1)
+                VALUES ($1, $2)
                 RETURNING volumeID`, [
                 req.body.name || null,
                 req.body.comicID
@@ -219,6 +219,118 @@ router.post(
     }
 );
 
+//delete an existing comic
+//get all pages' imageURL associated with comicid and use deleteFromGCS, then delete comic
+router.delete('/deleteComic',
+    passwords.authorize,
+    validators.requiredAttributes(['comicID']),
+    validators.canModifyComic,
+    async (req, res, next) => {
+        try {
+            let urlQuery = await db.query(`
+                SELECT imgURL
+                FROM Comics.Page
+                WHERE comicID = $1`, [req.body.comicID]);
+            
+            deleteImages(urlQuery.rows);
 
+            await db.query(`
+                DELETE FROM Comics.Comic
+                WHERE comicID = $1`, [req.body.comicID]);
+            res.status(200).send('Comic was deleted.');
+
+        } catch (err) {
+            console.error(err);
+            if (err.constraint) {
+                res.status(400)
+                    .json({
+                        errorType: 'constraint-error',
+                        constraint: err.constraint
+                    });
+                return;
+            }
+            res.sendStatus(500);
+        }
+    }
+)
+
+router.delete('/deleteVolume',
+    passwords.authorize,
+    validators.requiredAttributes(['volumeID']),
+    validators.canModifyComic,
+    async (req, res, next) => {
+        try {
+
+            let volumeContentQuery = await db.query(`
+                SELECT chapterID
+                FROM Comics.Volume
+                WHERE volumeID = $1`, [req.body.volumeID]);
+
+            let urlQuery = await db.query(`
+                SELECT imgURL
+                FROM Comics.Page
+                WHERE chapterID IN ($1)`, [volumeContentQuery.rows]);
+            
+            deleteImages(urlQuery.rows);
+
+            await db.query(`
+                DELETE FROM Comics.Chapter
+                WHERE chapterID = $1`, [req.body.chapterID]);
+            res.status(200).send('Chapter was deleted.');
+
+        } catch (err) {
+            console.error(err);
+            if (err.constraint) {
+                res.status(400)
+                    .json({
+                        errorType: 'constraint-error',
+                        constraint: err.constraint
+                    });
+                return;
+            }
+            res.sendStatus(500);
+        }
+    }
+)
+
+router.delete('/deleteChapter',
+    passwords.authorize,
+    validators.requiredAttributes(['chapterID']),
+    validators.canModifyComic,
+    async (req, res, next) => {
+        try {
+            let urlQuery = await db.query(`
+                SELECT imgURL
+                FROM Comics.Page
+                WHERE chapterID = $1`, [req.body.chapterID]);
+            
+            deleteImages(urlQuery.rows);
+
+            await db.query(`
+                DELETE FROM Comics.Chapter
+                WHERE chapterID = $1`, [req.body.chapterID]);
+            res.status(200).send('Chapter was deleted.');
+
+        } catch (err) {
+            console.error(err);
+            if (err.constraint) {
+                res.status(400)
+                    .json({
+                        errorType: 'constraint-error',
+                        constraint: err.constraint
+                    });
+                return;
+            }
+            res.sendStatus(500);
+        }
+    }
+)
+
+function deleteImages(imageURLs){
+    for (let i=0; i<imageURLs.length; i++){
+        var splitURL = imageURLs[i].split('/');
+        upload.deleteFromGCS(splitURL[4]);
+    }
+}
 
 module.exports = router;
