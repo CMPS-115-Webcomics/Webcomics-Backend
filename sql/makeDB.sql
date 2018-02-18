@@ -8,9 +8,20 @@ CREATE TABLE Comics.Account (
     email               VARCHAR(254) UNIQUE,
     emailToken          VARCHAR(32),
     emailVerified       BOOLEAN DEFAULT false,
-    biography           TEXT,
+    biography           VARCHAR(5000),
     password            VARCHAR(256),
     salt                VARCHAR(32)
+);
+
+CREATE TABLE Comics.Message (
+    messageID           SERIAL PRIMARY KEY,
+    senderID            INTEGER NOT NULL,
+    receiverID          INTEGER NOT NULL,
+    subject             VARCHAR(64),
+    content             VARCHAR(5000),
+    read                BOOLEAN DEFAULT false,
+    FOREIGN KEY (senderID) REFERENCES Comics.Account(accountID),
+    FOREIGN KEY (receiverID) REFERENCES Comics.Account(accountID)
 );
 
 CREATE TABLE Comics.Comic (
