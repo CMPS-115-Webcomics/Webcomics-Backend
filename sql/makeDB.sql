@@ -10,7 +10,9 @@ CREATE TABLE Comics.Account (
     emailVerified       BOOLEAN DEFAULT false,
     biography           TEXT,
     password            VARCHAR(256),
-    salt                VARCHAR(32)
+    salt                VARCHAR(32),
+    role                VARCHAR(5) DEFAULT 'user' NOT NULL 
+    CONSTRAINT allowed_roles CHECK (role = 'user' OR role = 'mod' OR role = 'admin')
 );
 
 CREATE TABLE Comics.Comic (
@@ -50,8 +52,7 @@ CREATE TABLE Comics.Page (
     pageID              SERIAL PRIMARY KEY,
     pageNumber          SERIAL,
     chapterID           INTEGER,
-    comicID             INTEGER,
-    authorID            INTEGER,
+    comicID             INTEGER NOT NULL,
     altText             VARCHAR(300),
     imgURL              VARCHAR(255),
     published           BOOLEAN DEFAULT false,

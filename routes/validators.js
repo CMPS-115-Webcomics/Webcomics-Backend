@@ -24,11 +24,23 @@ async function canModifyComic(req, res, next) {
             })
         return;
     }
-    if (ownerQuery.rows[0].accountid !== req.user.accountID) {
+    if (ownerQuery.rows[0].accountid !== req.user.accountID && req.user.role === 'user') {
         res.status(403)
             .send({
-                error: 'You don\'t own that comic',
+                error: 'You don\'t have permission to edit that comic',
                 comicId: req.body.comicID
+            })
+        return;
+    }
+
+    next()
+}
+
+async function isModOrHigher(req, res, next) {
+    if (req.user.role === 'user') {
+        res.status(403)
+            .send({
+                error: 'You current role is not that of an admin or higher'
             })
         return;
     }
