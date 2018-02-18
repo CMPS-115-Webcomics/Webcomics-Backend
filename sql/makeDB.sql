@@ -20,6 +20,7 @@ CREATE TABLE Comics.Message (
     subject             VARCHAR(64),
     content             VARCHAR(5000),
     read                BOOLEAN DEFAULT false,
+    timeSent            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (senderID) REFERENCES Comics.Account(accountID),
     FOREIGN KEY (receiverID) REFERENCES Comics.Account(accountID)
 );
