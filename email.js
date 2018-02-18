@@ -1,7 +1,9 @@
 const passwords = require('./passwords');
 const sgMail = require('@sendgrid/mail');
+const config = require('./config');
 
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+sgMail.setApiKey(config.sendgridAPIKey);
 
 const fromAddress = 'noreply@comichub.io';
 

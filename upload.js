@@ -1,10 +1,11 @@
 const Storage = require('@google-cloud/storage');
 const Multer = require('multer');
+const config = require('./config');
 
 const storage = Storage({
-    projectId: process.env.GCLOUD_PROJECT
+    projectId: config.cloudProject
 });
-const bucket = storage.bucket(process.env.CLOUD_BUCKET);
+const bucket = storage.bucket(config.cloudBucket);
 
 const multer = Multer({
     storage: Multer.MemoryStorage,
@@ -14,7 +15,7 @@ const multer = Multer({
 });
 
 function getPublicUrl(filename) {
-    return `https://storage.googleapis.com/${process.env.CLOUD_BUCKET}/${filename}`;
+    return `https://storage.googleapis.com/${config.cloudBucket}/${filename}`;
 }
 
 function sendUploadToGCS(req, res, next) {
