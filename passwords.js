@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const config = require('./config');
-const db = require('../db');
+const db = require('./db');
 
 const emailVerificationExpirationTime = "7d";
 const passwordResetExpirationTime = "1h";
@@ -44,26 +44,26 @@ const createPasswordResetToken = (accountID) => {
   }, passwordResetExpirationTime);
 }
 
-const needsAuth = (req, res, next) => {
+const needsAuth = async (req, res, next) => {
   try {
     req.user = jwt.verify(req.header('token'), secret);
   } catch (e) {
     res.status(401)
       .send('Requires Authentication');
+    return;
   }
   try {
-    let bannedQuery = db.query(`SELECT banned FROM Comics.Account WHERE accountID = $1`, [req.user.accountID]);
+    let bannedQuery = await db.query(`SELECT banned FROM Comics.Account WHERE accountID = $1`, [req.user.accountID]);
+    const isBanned = bannedQuery.rows[0].banned;
+    if (isBanned) {
+      res.status(403)
+        .send('The user is banned');
+      return;
+    }
   } catch (e) {
-    console.error(e);
-    res.sendStatus(500);
+    next(e);
   }
-  const isBanned = bannedQuery.rows[0].banned;
-  if (isBanned){
-    res.status(403)
-      .send('The user is banned');
-  } else {
-    next();
-  }
+  next();
 }
 
 const getHashedPassword = (password) => {
