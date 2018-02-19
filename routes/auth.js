@@ -27,6 +27,15 @@ router.post('/verifyReset', passwords.authorize, validators.requiredAttributes([
         next(err);
     }
 });
+async function isBanned(username) {
+    let res = await IDBDatabase.query('SELECT username FROM Comics.Account WHERE username = $1 AND banned = false', [username]);
+    return res.rowCount === 0;
+}
+
+async function isEmailAvalible(email) {
+    let res = await db.query(`SELECT email FROM Comics.Account WHERE email = $1;`, [email]);
+    return res.rowCount === 0;
+}
 
 router.post('/requestReset', validators.requiredAttributes(['usernameOrEmail']), async (req, res, next) => {
     try {
@@ -88,7 +97,7 @@ router.post('/register', validators.requiredAttributes(['username', 'email', 'pa
 router.post('/login', validators.requiredAttributes(['usernameOrEmail', 'password']), async (req, res, next) => {
     try {
         const queryResult = await db.query(`
-            SELECT password, salt, accountID, username
+            SELECT password, salt, accountID, username, banned
             FROM Comics.Account 
             WHERE username = $1
                OR email    = $1`, [req.body.usernameOrEmail]);
@@ -98,6 +107,11 @@ router.post('/login', validators.requiredAttributes(['usernameOrEmail', 'passwor
             return;
         }
         const targetUser = queryResult.rows[0];
+        if (targetUser.banned) {
+            res.status(403)
+                .send('The account has been banned');
+            return;
+        }
         if (await passwords.checkPassword(req.body.password, targetUser.password, targetUser.salt)) {
             res.status(200)
                 .json({
@@ -135,5 +149,34 @@ router.post('/verifyEmail', passwords.authorize, async (req, res, next) => {
 router.get('/testAuth', passwords.authorize, async (req, res) => {
     res.json(req.user);
 });
+
+router.post('/ban', passwords.authorize, async(req,res) => {
+    try {
+        if (req.user.email) {
+            await db.query(`
+                UPDATE table_name
+                SET banned = true
+                WHERE accountID = $1;
+            `, [req.user.accountID]);
+            res.sendStatus(200);
+        } else {
+            res.sendStatus(403);
+        }
+    } catch (err) {
+        res.sendStatus(500);
+    }
+})
+router.get('/banstate', async(req, res) => {
+    try {
+        if (!hasRequiredAttributes(req.body, ['username'], res)) return;
+        const ok = await isBanned(req.body.username);
+        res.status(200)
+            .type('application/json')
+            .send({ ok: ok });
+    } catch (err) {
+        res.status(500)
+            .send('Internal Failure');
+    }
+})
 
 module.exports = router;
