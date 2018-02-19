@@ -48,6 +48,18 @@ function sendUploadToGCS(req, res, next) {
     stream.end(req.file.buffer);
 }
 
+function deleteFromGCS(filename) {
+    bucket
+        .file(filename)
+        .delete()
+        .then(() => {
+            console.log(`gs://${bucketName}/${filename} deleted.`);
+        })
+        .catch(err => {
+            console.error('ERROR:', err);
+        });
+}
+
 module.exports = {
     getPublicUrl,
     sendUploadToGCS,

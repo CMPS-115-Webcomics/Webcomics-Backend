@@ -2,8 +2,6 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 
-
-
 function checkAvalibility(table, attribute) {
     return async (req, res, next ) => {
         try {

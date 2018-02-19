@@ -34,6 +34,7 @@ router.get('/myComics', passwords.authorize, async function (req, res, next) {
     }
 });
 
+// comic insertion
 
 /* Get a single comic from url */
 router.get('/get/:comicURL', async function (req, res, next) {
@@ -76,7 +77,7 @@ router.get('/get/:comicURL', async function (req, res, next) {
 });
 
 
-//Generate a new comic 
+//Generate a new comic and add it to the database
 router.post('/create',
     passwords.authorize,
     upload.multer.single('thumbnail'),
@@ -89,7 +90,7 @@ router.post('/create',
         }
         try {
             let created = await db.query(`
-                INSERT INTO Comics.comic 
+                INSERT INTO Comics.Comic 
                 (accountID, title, comicURL, thumbnailURL, description)
                 VALUES ($1, $2, $3, $4, $5)
                 RETURNING comicID;
@@ -114,21 +115,24 @@ router.post('/create',
             }
             res.sendStatus(500);
         }
-    });
+    }
+);
 
+//adds a new volume for a given comic to the database
 router.post('/addVolume',
     passwords.authorize,
-    validators.requiredAttributes(['comicID']),
+    validators.requiredAttributes(['comicID', 'volumeNumber']),
     validators.canModifyComic,
     async function (req, res, next) {
         try {
             let created = await db.query(`
                 INSERT INTO Comics.Volume 
-                (name, comicID)
-                VALUES ($1)
+                (name, comicID, volumeNumber)
+                VALUES ($1, $2, $3)
                 RETURNING volumeID`, [
                 req.body.name || null,
-                req.body.comicID
+                req.body.comicID,
+                req.body.volumeNumber
             ]);
             res.status(201)
                 .json(created.rows[0]);
@@ -144,23 +148,25 @@ router.post('/addVolume',
             }
             res.sendStatus(500);
         }
-    });
+    }
+);
 
-
+//adds a new chapter for a given comic to the database
 router.post('/addChapter',
     passwords.authorize,
-    validators.requiredAttributes(['comicID']),
+    validators.requiredAttributes(['comicID', 'chapterNumber']),
     validators.canModifyComic,
     async function (req, res, next) {
         try {
             let chapterInsertion = await db.query(`
                 INSERT INTO Comics.Chapter 
-                (volumeID, name, comicID)
-                VALUES ($1, $2, $3)
+                (volumeID, name, comicID, chapterNumber)
+                VALUES ($1, $2, $3, $4)
                 RETURNING chapterID;`, [
                 req.body.volumeID === 'null' ? null : req.body.volumeID,
                 req.body.name || null,
-                req.body.comicID
+                req.body.comicID,
+                req.body.chapterNumber
             ]);
 
             res.status(201)
@@ -177,13 +183,15 @@ router.post('/addChapter',
             }
             res.sendStatus(500);
         }
-    });
+    }
+);
 
+//adds a new page for a given comic to the database
 router.post(
     '/addPage',
     passwords.authorize,
     upload.multer.single('file'),
-    validators.requiredAttributes(['comicID', 'altText']),
+    validators.requiredAttributes(['comicID', 'pageNumber']),
     validators.canModifyComic,
     upload.sendUploadToGCS,
     async (req, res, next) => {
@@ -198,7 +206,7 @@ router.post(
                 VALUES ($1, $2, $3, $4, $5)`, [
                 req.body.pageNumber,
                 req.body.comicID,
-                req.body.altText,
+                req.body.altText || null,
                 req.body.chapterID === 'null' ? null : req.body.chapterID,
                 req.file.cloudStoragePublicUrl
             ]);
@@ -219,6 +227,161 @@ router.post(
     }
 );
 
+// comic deletion
+
+//deletes images from the cloud by using their URLs
+function deleteImages(imageURLs){
+    for (let i=0; i<imageURLs.length; i++){
+        var splitURL = imageURLs[i].imgURL.split('/');
+        upload.deleteFromGCS(splitURL[4]);
+    }
+}
+
+//deletes all images associated with the comic by using deleteImages
+//and removes the comic and all its contents from the database
+router.delete('/deleteComic',
+    passwords.authorize,
+    validators.requiredAttributes(['comicID']),
+    validators.canModifyComic,
+    async (req, res, next) => {
+        try {
+            let urlQuery = await db.query(`
+                SELECT imgURL
+                FROM Comics.Page
+                WHERE comicID = $1`, [req.body.comicID]);
+            
+            deleteImages(urlQuery.rows);
+
+            await db.query(`
+                DELETE FROM Comics.Comic
+                WHERE comicID = $1`, [req.body.comicID]);
+            res.status(200).send('Comic was deleted.');
+
+        } catch (err) {
+            console.error(err);
+            if (err.constraint) {
+                res.status(400)
+                    .json({
+                        errorType: 'constraint-error',
+                        constraint: err.constraint
+                    });
+                return;
+            }
+            res.sendStatus(500);
+        }
+    }
+);
+
+//deletes a volume's associated images with deleteImages and
+//removes the volume and its contents from the database
+router.delete('/deleteVolume',
+    passwords.authorize,
+    validators.requiredAttributes(['volumeID']),
+    validators.canModifyComic,
+    async (req, res, next) => {
+        try {
+
+            let volumeContentQuery = await db.query(`
+                SELECT chapterID
+                FROM Comics.Volume
+                WHERE volumeID = $1`, [req.body.volumeID]);
+
+            let urlQuery = await db.query(`
+                SELECT imgURL
+                FROM Comics.Page
+                WHERE chapterID IN ($1)`, [volumeContentQuery.rows]);
+            
+            deleteImages(urlQuery.rows);
+
+            await db.query(`
+                DELETE FROM Comics.Volume
+                WHERE volumeID = $1`, [req.body.volumeID]);
+            res.status(200).send('Volume was deleted.');
+
+        } catch (err) {
+            console.error(err);
+            if (err.constraint) {
+                res.status(400)
+                    .json({
+                        errorType: 'constraint-error',
+                        constraint: err.constraint
+                    });
+                return;
+            }
+            res.sendStatus(500);
+        }
+    }
+);
+
+//deletes all images associated with the chapter via deleteImages
+//and removes the chapter and its contents from the database
+router.delete('/deleteChapter',
+    passwords.authorize,
+    validators.requiredAttributes(['chapterID']),
+    validators.canModifyComic,
+    async (req, res, next) => {
+        try {
+            let urlQuery = await db.query(`
+                SELECT imgURL
+                FROM Comics.Page
+                WHERE chapterID = $1`, [req.body.chapterID]);
+            
+            deleteImages(urlQuery.rows);
+
+            await db.query(`
+                DELETE FROM Comics.Chapter
+                WHERE chapterID = $1`, [req.body.chapterID]);
+            res.status(200).send('Chapter was deleted.');
+
+        } catch (err) {
+            console.error(err);
+            if (err.constraint) {
+                res.status(400)
+                    .json({
+                        errorType: 'constraint-error',
+                        constraint: err.constraint
+                    });
+                return;
+            }
+            res.sendStatus(500);
+        }
+    }
+);
+
+//deletes the page's image via deleteImages and
+//removes the page from the database
+router.delete('/deletePage',
+    passwords.authorize,
+    validators.requiredAttributes(['pageID']),
+    validators.canModifyComic,
+    async (req, res, next) => {
+        try {
+            let urlQuery = await db.query(`
+                SELECT imgURL
+                FROM Comics.Page
+                WHERE pageID = $1`, [req.body.pageID]);
+            
+            deleteImages(urlQuery.rows);
+
+            await db.query(`
+                DELETE FROM Comics.Page
+                WHERE comicID = $1`, [req.body.pageID]);
+            res.status(200).send('Page was deleted.');
+
+        } catch (err) {
+            console.error(err);
+            if (err.constraint) {
+                res.status(400)
+                    .json({
+                        errorType: 'constraint-error',
+                        constraint: err.constraint
+                    });
+                return;
+            }
+            res.sendStatus(500);
+        }
+    }
+);
 
 
 module.exports = router;
