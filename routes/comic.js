@@ -230,7 +230,7 @@ router.post(
 //deletes images from the cloud by using their URLs
 function deleteImages(imageURLs){
     for (let i=0; i<imageURLs.length; i++){
-        var splitURL = imageURLs[i].split('/');
+        var splitURL = imageURLs[i].imgURL.split('/');
         upload.deleteFromGCS(splitURL[4]);
     }
 }
