@@ -89,7 +89,7 @@ router.post('/register', validators.requiredAttributes(['username', 'email', 'pa
 router.post('/login', validators.requiredAttributes(['usernameOrEmail', 'password']), async (req, res, next) => {
     try {
         const queryResult = await db.query(`
-            SELECT password, salt, accountID, username
+            SELECT password, salt, accountID, username, banned
             FROM Comics.Account 
             WHERE username = $1
                OR email    = $1`, [req.body.usernameOrEmail]);
@@ -102,6 +102,11 @@ router.post('/login', validators.requiredAttributes(['usernameOrEmail', 'passwor
             return;
         }
         const targetUser = queryResult.rows[0];
+        if (targetUser.banned) {
+            res.status(403)
+                .send('The account has been banned');
+            return;
+        }
         if (await passwords.checkPassword(req.body.password, targetUser.password, targetUser.salt)) {
             res.status(200)
                 .json({
