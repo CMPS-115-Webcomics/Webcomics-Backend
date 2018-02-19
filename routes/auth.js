@@ -46,7 +46,9 @@ router.post('/requestReset', validators.requiredAttributes(['usernameOrEmail']),
         }
         let result = queryResult.rows[0];
         email.sendPasswordResetEmail(result.email, result.accountid);
-        res.json({message: 'Reset email sent'});
+        res.json({
+            message: 'Reset email sent'
+        });
     } catch (err) {
         next(err);
     }
@@ -97,6 +99,7 @@ router.post('/login', validators.requiredAttributes(['usernameOrEmail', 'passwor
                     account: req.body.usernameOrEmail,
                     message: 'No such account'
                 });
+            return;
         }
         const targetUser = queryResult.rows[0];
         if (await passwords.checkPassword(req.body.password, targetUser.password, targetUser.salt)) {

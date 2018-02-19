@@ -7,7 +7,7 @@ const upload = require('../upload');
 const passwords = require('../passwords');
 
 /*Get a list of all comics. */
-router.get('/list', async function (req, res, next) {
+router.get('/comics', async function (req, res, next) {
     try {
         let result = await db.query(`
             SELECT comicID, accountID, title, comicURL, description, thumbnailURL 
@@ -20,7 +20,7 @@ router.get('/list', async function (req, res, next) {
 });
 
 /*Get a list of owned comics. */
-router.get('/mycomics', passwords.authorize, async function (req, res, next) {
+router.get('/myComics', passwords.authorize, async function (req, res, next) {
     try {
         let result = await db.query(`
             SELECT comicID, accountID, title, comicURL, description, thumbnailURL 

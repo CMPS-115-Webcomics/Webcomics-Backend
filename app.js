@@ -12,17 +12,23 @@ var index = require('./routes/index');
 var users = require('./routes/users');
 var auth = require('./routes/auth');
 var comic = require('./routes/comic');
+var message = require('./routes/message');
 var availability = require('./routes/availability');
 
 var app = express();
 
-var whitelist = new Set(['http://localhost:4200', 'https://comichub.io', 'https://silent-thunder-192708.firebaseapp.com']);
+var whitelist = new Set([
+  'http://localhost:4200', 
+  'https://comichub.io', 
+  'https://silent-thunder-192708.firebaseapp.com',
+  undefined
+]);
 var corsOptions = {
   origin: function (origin, callback) {
     if (whitelist.has(origin)) {
       callback(null, true)
     } else {
-      callback(new Error('Not allowed by CORS'))
+      callback(new Error(`Origin "${origin}" not allowed by CORS`))
     }
   }
 }
@@ -40,6 +46,7 @@ app.use('/', index);
 app.use('/api/users', users);
 app.use('/api/auth', auth);
 app.use('/api/comics', comic);
+app.use('/api/messages', message);
 app.use('/api/availability', availability);
 
 // catch 404 and forward to error handler

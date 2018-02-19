@@ -1,15 +1,14 @@
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
+const config = require('./config');
+
 
 const emailVerificationExpirationTime = "7d";
 const passwordResetExpirationTime = "1h";
 const userTokenExpirationTime = "7d";
 
-let secret;
-if (process.env.JWT_SECRET) {
-  secret = process.env.JWT_SECRET;
-} else {
-  secret = 'TestSecret';
+const secret = config.jwtSecret;
+if (secret === 'TestSecret') {
   console.warn('No JWT_SECRET enviroment variable found. Using test secret. Do not use this in production.');
 }
 
