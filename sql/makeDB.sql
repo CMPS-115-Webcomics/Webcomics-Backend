@@ -41,7 +41,7 @@ CREATE TABLE Comics.Comic (
 CREATE TABLE Comics.Volume (
     volumeID            SERIAL PRIMARY KEY,
     comicID             INTEGER NOT NULL,
-    volumeNumber        INTEGER,
+    volumeNumber        INTEGER NOT NULL,
     name                VARCHAR(50),
     published           BOOLEAN DEFAULT false,
     UNIQUE( volumeNumber, comicID ),
@@ -51,10 +51,10 @@ CREATE TABLE Comics.Volume (
 CREATE TABLE Comics.Chapter (
     chapterID           SERIAL PRIMARY KEY,
     volumeID            INTEGER,
-    chapterNumber       SERIAL,
+    chapterNumber       INTEGER NOT NULL,
     name                VARCHAR(50),
     published           BOOLEAN DEFAULT false,
-    comicID             INTEGER,
+    comicID             INTEGER NOT NULL,
     UNIQUE( chapterNumber, volumeID, comicID ),
     FOREIGN KEY (volumeID) REFERENCES Comics.Volume(volumeID) ON DELETE CASCADE,
     FOREIGN KEY (comicID) REFERENCES Comics.Comic(comicID) ON DELETE CASCADE
@@ -62,7 +62,7 @@ CREATE TABLE Comics.Chapter (
 
 CREATE TABLE Comics.Page (
     pageID              SERIAL PRIMARY KEY,
-    pageNumber          SERIAL,
+    pageNumber          INTEGER NOT NULL,
     chapterID           INTEGER,
     comicID             INTEGER NOT NULL,
     altText             VARCHAR(300),

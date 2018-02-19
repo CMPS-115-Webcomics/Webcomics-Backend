@@ -121,17 +121,18 @@ router.post('/create',
 //adds a new volume for a given comic to the database
 router.post('/addVolume',
     passwords.authorize,
-    validators.requiredAttributes(['comicID']),
+    validators.requiredAttributes(['comicID', 'volumeNumber']),
     validators.canModifyComic,
     async function (req, res, next) {
         try {
             let created = await db.query(`
                 INSERT INTO Comics.Volume 
-                (name, comicID)
-                VALUES ($1, $2)
+                (name, comicID, volumeNumber)
+                VALUES ($1, $2, $3)
                 RETURNING volumeID`, [
                 req.body.name || null,
-                req.body.comicID
+                req.body.comicID,
+                req.body.volumeNumber
             ]);
             res.status(201)
                 .json(created.rows[0]);
@@ -153,18 +154,19 @@ router.post('/addVolume',
 //adds a new chapter for a given comic to the database
 router.post('/addChapter',
     passwords.authorize,
-    validators.requiredAttributes(['comicID']),
+    validators.requiredAttributes(['comicID', 'chapterNumber']),
     validators.canModifyComic,
     async function (req, res, next) {
         try {
             let chapterInsertion = await db.query(`
                 INSERT INTO Comics.Chapter 
-                (volumeID, name, comicID)
-                VALUES ($1, $2, $3)
+                (volumeID, name, comicID, chapterNumber)
+                VALUES ($1, $2, $3, $4)
                 RETURNING chapterID;`, [
                 req.body.volumeID === 'null' ? null : req.body.volumeID,
                 req.body.name || null,
-                req.body.comicID
+                req.body.comicID,
+                req.body.chapterNumber
             ]);
 
             res.status(201)
@@ -189,7 +191,7 @@ router.post(
     '/addPage',
     passwords.authorize,
     upload.multer.single('file'),
-    validators.requiredAttributes(['comicID']),
+    validators.requiredAttributes(['comicID', 'pageNumber']),
     validators.canModifyComic,
     upload.sendUploadToGCS,
     async (req, res, next) => {
