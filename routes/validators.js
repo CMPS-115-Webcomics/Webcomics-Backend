@@ -1,19 +1,5 @@
 const db = require('../db');
 
-function makeAviliblityValidator(table, attribute) {
-    return async (req, res) => {
-        try {
-            const query = await db.query(`SELECT ${attribute} FROM Comics.${table} WHERE ${attribute}=$1`, [req.params[attribute]]);
-            res.json({
-                availbile: query.rowCount === 0
-            });
-        } catch (err) {
-            console.error(err);
-            res.sendStatus(500);
-        }
-    };
-}
-
 async function canModifyComic(req, res, next) {
     let ownerQuery = await db.query(`SELECT accountID from Comics.Comic WHERE comicID = $1`, [req.body.comicID]);
     if (ownerQuery.rowCount === 0) {
@@ -58,7 +44,6 @@ function makeAttributeValidator(params) {
 }
 
 module.exports = {
-    availibilityRoute: makeAviliblityValidator,
     requiredAttributes: makeAttributeValidator,
     canModifyComic: canModifyComic
 }
