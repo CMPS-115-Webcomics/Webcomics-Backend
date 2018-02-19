@@ -22,7 +22,7 @@ async function canModifyComic(req, res, next) {
     next()
 }
 
-async function isModOrHigher(req, res, next) {
+function isModOrHigher(req, res, next) {
     if (req.user.role === 'user') {
         res.status(403)
             .send({
@@ -30,7 +30,6 @@ async function isModOrHigher(req, res, next) {
             })
         return;
     }
-
     next()
 }
 
@@ -57,5 +56,6 @@ function makeAttributeValidator(params) {
 
 module.exports = {
     requiredAttributes: makeAttributeValidator,
-    canModifyComic: canModifyComic
+    canModifyComic: canModifyComic,
+    isMod: isModOrHigher
 }

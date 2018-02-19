@@ -24,9 +24,10 @@ const signJWT = (payload, expirationTime) => {
   });
 }
 
-const createUserToken = (accountID) => {
+const createUserToken = (accountID, role) => {
   return signJWT({
-    accountID: accountID
+    accountID: accountID,
+    role: role
   }, userTokenExpirationTime);
 }
 

@@ -1,4 +1,4 @@
-const db = require('../db.js');
+const db = require('../db');
 const validators = require('./validators');
 const passwords = require('../passwords.js');
 const email = require('../email');
@@ -13,14 +13,14 @@ router.post('/verifyReset', passwords.authorize, validators.requiredAttributes([
             UPDATE Comics.Account 
             SET password = $1, salt = $2 
             WHERE accountID = $3
-            RETURNING username;`, [
+            RETURNING username, role;`, [
             passwordData.hash,
             passwordData.salt,
             req.user.accountID
         ]);
         res.status(200)
             .json({
-                token: passwords.createUserToken(req.user.accountID),
+                token: passwords.createUserToken(req.user.accountID, queryResult.rows[0].role),
                 username: queryResult.rows[0].username
             });
     } catch (e) {
@@ -74,7 +74,7 @@ router.post('/register', validators.requiredAttributes(['username', 'email', 'pa
             password,
             salt
         ) VALUES ($1, $2, $3, $4, $5, $6)
-        RETURNING accountID, email;`, [
+        RETURNING accountID, role, email;`, [
             req.body.username,
             req.body.profileURL,
             req.body.email.toLowerCase(),
@@ -86,7 +86,7 @@ router.post('/register', validators.requiredAttributes(['username', 'email', 'pa
         email.sendVerificationEmail(result.email, result.accountid);
         res.status(201)
             .json({
-                token: passwords.createUserToken(result.accountid),
+                token: passwords.createUserToken(result.accountid, result.role),
                 username: req.body.username
             });
     } catch (e) {
@@ -97,7 +97,7 @@ router.post('/register', validators.requiredAttributes(['username', 'email', 'pa
 router.post('/login', validators.requiredAttributes(['usernameOrEmail', 'password']), async (req, res, next) => {
     try {
         const queryResult = await db.query(`
-            SELECT password, salt, accountID, username, banned
+            SELECT password, salt, accountID, username, role, banned
             FROM Comics.Account 
             WHERE username = $1
                OR email    = $1`, [req.body.usernameOrEmail]);
@@ -115,7 +115,7 @@ router.post('/login', validators.requiredAttributes(['usernameOrEmail', 'passwor
         if (await passwords.checkPassword(req.body.password, targetUser.password, targetUser.salt)) {
             res.status(200)
                 .json({
-                    token: passwords.createUserToken(targetUser.accountid),
+                    token: passwords.createUserToken(targetUser.accountid, targetUser.role),
                     username: targetUser.username
                 });
             return;
