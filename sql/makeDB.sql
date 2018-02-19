@@ -8,6 +8,7 @@ CREATE TABLE Comics.Account (
     email               VARCHAR(254) UNIQUE,
     emailToken          VARCHAR(32),
     emailVerified       BOOLEAN DEFAULT false,
+    banned              BOOLEAN DEFAULT false,
     biography           VARCHAR(5000),
     password            VARCHAR(256),
     salt                VARCHAR(32),
