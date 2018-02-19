@@ -18,7 +18,6 @@ router.post('/verifyReset', passwords.authorize, validators.requiredAttributes([
             passwordData.salt,
             req.user.accountID
         ]);
-
         res.status(200)
             .json({
                 token: passwords.createUserToken(req.user.accountID),
@@ -94,11 +93,8 @@ router.post('/login', validators.requiredAttributes(['usernameOrEmail', 'passwor
             WHERE username = $1
                OR email    = $1`, [req.body.usernameOrEmail]);
         if (queryResult.rowCount == 0) {
-            res.status(400)
-                .json({
-                    account: req.body.usernameOrEmail,
-                    message: 'No such account'
-                });
+            res.message
+            res.status(400).send('No such account');
             return;
         }
         const targetUser = queryResult.rows[0];
