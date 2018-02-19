@@ -1,11 +1,11 @@
 const db = require('../db');
 
-function makeAviliblityValidator(table, attribute) {
+function makeAvailablityValidator(table, attribute) {
     return async (req, res) => {
         try {
             const query = await db.query(`SELECT ${attribute} FROM Comics.${table} WHERE ${attribute}=$1`, [req.params[attribute]]);
             res.json({
-                availbile: query.rowCount === 0
+                available: query.rowCount === 0
             });
         } catch (err) {
             console.error(err);
@@ -70,7 +70,7 @@ function makeAttributeValidator(params) {
 }
 
 module.exports = {
-    availibilityRoute: makeAviliblityValidator,
+    availabilityRoute: makeAvailablityValidator,
     requiredAttributes: makeAttributeValidator,
     canModifyComic: canModifyComic
 }
