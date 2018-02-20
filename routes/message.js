@@ -3,9 +3,9 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const validators = require('./validators');
-const passwords = require('../passwords');
+const tokens = require('../tokens');
 
-router.post('/send', passwords.authorize, validators.isMod, validators.requiredAttributes(['receiverID', 'subject', 'content']), async (req, res, next) => {
+router.post('/send', tokens.authorize, validators.isMod, validators.requiredAttributes(['receiverID', 'subject', 'content']), async (req, res, next) => {
     try {
         await db.query(`
             INSERT INTO Comics.Message 
@@ -19,7 +19,7 @@ router.post('/send', passwords.authorize, validators.isMod, validators.requiredA
     }
 });
 
-router.post('/markRead', passwords.authorize, validators.requiredAttributes(['messageID']), async (req, res, next) => {
+router.post('/markRead', tokens.authorize, validators.requiredAttributes(['messageID']), async (req, res, next) => {
     try {
         await db.query(`
             UPDATE Comics.Message
@@ -33,7 +33,7 @@ router.post('/markRead', passwords.authorize, validators.requiredAttributes(['me
     }
 });
 
-router.get('/list', passwords.authorize, async (req, res, next) => {
+router.get('/list', tokens.authorize, async (req, res, next) => {
     try {
         const result = await db.query(`
             SELECT acc.username as sender, msg.subject, msg.content, msg.read, msg.timeSent, msg.messageID

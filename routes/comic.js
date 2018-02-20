@@ -5,7 +5,7 @@ const router = express.Router();
 const db = require('../db');
 const validators = require('./validators');
 const upload = require('../upload');
-const passwords = require('../passwords');
+const tokens = require('../tokens');
 
 /*Get a list of all comics. */
 router.get('/comics', async (req, res, next) => {
@@ -21,7 +21,7 @@ router.get('/comics', async (req, res, next) => {
 });
 
 /*Get a list of owned comics. */
-router.get('/myComics', passwords.authorize, async (req, res, next) => {
+router.get('/myComics', tokens.authorize, async (req, res, next) => {
     try {
         const result = await db.query(`
             SELECT comicID, accountID, title, comicURL, description, thumbnailURL 
@@ -77,7 +77,7 @@ router.get('/get/:comicURL', async (req, res, next) => {
 
 //Generate a new comic and add it to the database
 router.post('/create',
-    passwords.authorize,
+    tokens.authorize,
     upload.multer.single('thumbnail'),
     validators.requiredAttributes(['title', 'comicURL', 'description']),
     upload.sendUploadToGCS,
@@ -110,7 +110,7 @@ router.post('/create',
 
 //adds a new volume for a given comic to the database
 router.post('/addVolume',
-    passwords.authorize,
+    tokens.authorize,
     validators.requiredAttributes(['comicID', 'volumeNumber']),
     validators.canModifyComic,
     async (req, res, next) => {
@@ -135,7 +135,7 @@ router.post('/addVolume',
 
 //adds a new chapter for a given comic to the database
 router.post('/addChapter',
-    passwords.authorize,
+    tokens.authorize,
     validators.requiredAttributes(['comicID', 'chapterNumber']),
     validators.canModifyComic,
     async (req, res, next) => {
@@ -163,7 +163,7 @@ router.post('/addChapter',
 //adds a new page for a given comic to the database
 router.post(
     '/addPage',
-    passwords.authorize,
+    tokens.authorize,
     upload.multer.single('file'),
     validators.requiredAttributes(['comicID', 'pageNumber']),
     validators.canModifyComic,
@@ -207,7 +207,7 @@ const deleteImages = rows => {
 //deletes all images associated with the comic by using deleteImages
 //and removes the comic and all its contents from the database
 router.delete('/deleteComic',
-    passwords.authorize,
+    tokens.authorize,
     validators.requiredAttributes(['comicID']),
     validators.canModifyComic,
     async (req, res, next) => {
@@ -241,7 +241,7 @@ router.delete('/deleteComic',
 //deletes a volume's associated images with deleteImages and
 //removes the volume and its contents from the database
 router.delete('/deleteVolume',
-    passwords.authorize,
+    tokens.authorize,
     validators.requiredAttributes(['volumeID']),
     validators.canModifyComic,
     async (req, res, next) => {
@@ -272,7 +272,7 @@ router.delete('/deleteVolume',
 //deletes all images associated with the chapter via deleteImages
 //and removes the chapter and its contents from the database
 router.delete('/deleteChapter',
-    passwords.authorize,
+    tokens.authorize,
     validators.requiredAttributes(['chapterID']),
     validators.canModifyComic,
     async (req, res, next) => {
@@ -299,7 +299,7 @@ router.delete('/deleteChapter',
 //deletes the page's image via deleteImages and
 //removes the page from the database
 router.delete('/deletePage',
-    passwords.authorize,
+    tokens.authorize,
     validators.requiredAttributes(['pageID']),
     validators.canModifyComic,
     async (req, res, next) => {

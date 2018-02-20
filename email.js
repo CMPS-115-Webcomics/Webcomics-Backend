@@ -1,6 +1,6 @@
 'use strict';
 
-const passwords = require('./passwords');
+const tokens = require('./tokens');
 const sgMail = require('@sendgrid/mail');
 const config = require('./config');
 
@@ -16,7 +16,7 @@ const fromAddress = 'noreply@comichub.io';
  * @returns {void}
  */
 const sendPasswordResetEmail = async (targetEmail, accountID) => {
-    const token = passwords.createPasswordResetToken(accountID);
+    const token = tokens.createPasswordResetToken(accountID);
     const url = `https://comichub.io/reset/${token}`;
     try {
         await sgMail.send({
@@ -43,7 +43,7 @@ const sendPasswordResetEmail = async (targetEmail, accountID) => {
  * @returns {void}
  */
 const sendVerificationEmail = async (targetEmail, accountID) => {
-    const token = passwords.createEmailVerificationToken(accountID);
+    const token = tokens.createEmailVerificationToken(accountID);
     const url = `https://comichub.io/verify/${token}`;
     try {
         await sgMail.send({

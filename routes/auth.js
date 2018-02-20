@@ -2,7 +2,8 @@
 
 const db = require('../db');
 const validators = require('./validators');
-const passwords = require('../passwords.js');
+const passwords = require('../passwords');
+const tokens = require('../tokens');
 const email = require('../email');
 
 const express = require('express');
@@ -18,7 +19,7 @@ const router = express.Router();
  */
 const authResponce = (accountID, role, username) => {
     return {
-        token: passwords.createUserToken(accountID, role),
+        token: tokens.createUserToken(accountID, role),
         username,
         role
     };
@@ -36,7 +37,7 @@ const isBanned = async username => {
 };
 
 
-router.post('/verifyReset', passwords.authorize, validators.requiredAttributes(['password']), async (req, res, next) => {
+router.post('/verifyReset', tokens.authorize, validators.requiredAttributes(['password']), async (req, res, next) => {
     try {
         const passwordData = await passwords.getHashedPassword(req.body.password);
         const queryResult = await db.query(`
@@ -142,7 +143,7 @@ router.post('/login', validators.requiredAttributes(['usernameOrEmail', 'passwor
     }
 });
 
-router.post('/verifyEmail', passwords.authorize, async (req, res, next) => {
+router.post('/verifyEmail', tokens.authorize, async (req, res, next) => {
     try {
         if (req.user.email && req.user.accountID) {
             await db.query(`
@@ -163,12 +164,12 @@ router.post('/verifyEmail', passwords.authorize, async (req, res, next) => {
 });
 
 
-router.get('/testAuth', passwords.authorize, async (req, res) => {
+router.get('/testAuth', tokens.authorize, async (req, res) => {
     res.json(req.user);
 });
 
 router.post('/ban',
-    passwords.authorize,
+    tokens.authorize,
     validators.isMod,
     validators.requiredAttributes(['accountID']),
     async (req, res) => {
