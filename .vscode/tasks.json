@@ -6,7 +6,7 @@
         {
             "label": "eslint",
             "windows": {
-                "command": ".\\node_modules\\.bin\\eslint"
+                "command": "./node_modules/.bin/eslint"
             },
             "linux": {
                 "command": "./node_modules/.bin/eslint"
