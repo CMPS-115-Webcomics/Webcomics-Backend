@@ -4,6 +4,15 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 
+/**
+ * Checks if a certain table has a row with the given attribute.
+ * This is useful so the client can immediatly provide feedback on
+ * whether a certain unique key is avalible.
+ *
+ * @param {string} table The table whose attribute we are checking
+ * @param {string} attribute The key of the table
+ * @returns {function(Request, Response, NextFunction): void} Route handler that checks the attribute
+ */
 const checkAvalibility = (table, attribute) => {
     return async (req, res, next) => {
         try {

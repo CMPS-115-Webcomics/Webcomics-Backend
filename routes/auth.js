@@ -8,6 +8,14 @@ const email = require('../email');
 const express = require('express');
 const router = express.Router();
 
+/**
+ * Produces the results of a sucesful authorzation such as logging in or registering
+ *
+ * @param {number} accountID Id of account that logged in
+ * @param {string} role Role of the user
+ * @param {string} username Name of th user
+ * @returns {{token: string, role:string, username:string}}} a
+ */
 const authResponce = (accountID, role, username) => {
     return {
         token: passwords.createUserToken(accountID, role),
@@ -16,6 +24,12 @@ const authResponce = (accountID, role, username) => {
     };
 };
 
+/**
+ * Checks if a user  is banned
+ *
+ * @param {string} username The username to check
+ * @returns {Promise<Boolean>} A promise that tells if a user is banned
+ */
 const isBanned = async username => {
     const res = await db.query('SELECT username FROM Comics.Account WHERE username = $1 AND banned = false', [username]);
     return res.rowCount === 0;
