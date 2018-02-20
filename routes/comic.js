@@ -240,24 +240,22 @@ router.delete('/deleteVolume',
     validators.canModifyComic,
     async (req, res, next) => {
         try {
-
-            let volumeContentQuery = await db.query(`
-                SELECT chapterID
-                FROM Comics.Volume
-                WHERE volumeID = $1`, [req.body.volumeID]);
-
             let urlQuery = await db.query(`
-                SELECT imgURL
-                FROM Comics.Page
-                WHERE chapterID IN ($1)`, [volumeContentQuery.rows]);
+                SELECT p.imgURL
+                FROM Comics.Page p
+                WHERE p.chapterID IN (
+                    SELECT c.chapterID
+                    FROM Comics.Chapter c
+                    WHERE c.volumeID = $1
+                );`, [req.body.volumeID]);
 
             deleteImages(urlQuery.rows);
 
             await db.query(`
                 DELETE FROM Comics.Volume
                 WHERE volumeID = $1`, [req.body.volumeID]);
-           
-             res.status(200).send('Volume was deleted.');
+
+            res.status(200).send('Volume was deleted.');
         } catch (err) {
             next(err);
         }
@@ -282,7 +280,7 @@ router.delete('/deleteChapter',
             await db.query(`
                 DELETE FROM Comics.Chapter
                 WHERE chapterID = $1`, [req.body.chapterID]);
-            
+
             res.status(200).send('Chapter was deleted.');
         } catch (err) {
             next(err);
