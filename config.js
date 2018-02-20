@@ -1,11 +1,11 @@
 let json = {};
 try {
-    json = require('./config.json');
+    json = require('./config/config.json');
 } catch (e) {
     json = {};
 }
 
-module.exports = {
+const config = {
     database: {
         user: json.SQL_USER || process.env.SQL_USER || 'postgres',
         database: json.SQL_DATABASE || process.env.SQL_DATABASE || 'postgres',
@@ -18,3 +18,7 @@ module.exports = {
     googleCredentialPath: json.GOOGLE_APPLICATION_CREDENTIALS || process.env.GOOGLE_APPLICATION_CREDENTIALS,
     sendgridAPIKey: json.SENDGRID_API_KEY || process.env.SENDGRID_API_KEY
 }
+
+process.env.GOOGLE_APPLICATION_CREDENTIALS = config.googleCredentialPath;
+
+module.exports = config;

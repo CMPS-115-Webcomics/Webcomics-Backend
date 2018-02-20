@@ -11,3 +11,5 @@ This project was generated with [Express Generator](https://github.com/expressjs
 2. Run `npm install -g @angular/cli`
 
 3. `npm install` within the project directory to get its dependencies.
+
+4. Place a config.json and service-account.json file into the config folder. The service-account file may be obtained from google cloud compute. The config.json file must define the keys noted in config.js. Both of these are in gitignore because they contain secrets.

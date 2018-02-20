@@ -1,73 +1,78 @@
 DROP SCHEMA Comics CASCADE; 
 CREATE SCHEMA Comics;
 
+CREATE TYPE USER_ROLE AS ENUM ('user', 'mod', 'admin');
+
 CREATE TABLE Comics.Account (
     accountID           SERIAL PRIMARY KEY,
-    username            VARCHAR(30) UNIQUE,
+    username            VARCHAR(30) UNIQUE NOT NULL,
     profileURL          VARCHAR(30) UNIQUE,
-    email               VARCHAR(254) UNIQUE,
-    emailToken          VARCHAR(32),
-    emailVerified       BOOLEAN DEFAULT false,
+    email               VARCHAR(254) UNIQUE NOT NULL,
+    emailVerified       BOOLEAN DEFAULT false NOT NULL,
+    banned              BOOLEAN DEFAULT false NOT NULL,
     biography           VARCHAR(5000),
-    password            VARCHAR(256),
-    salt                VARCHAR(32)
+    joined              DATE DEFAULT CURRENT_DATE NOT NULL,
+    password            VARCHAR(256) NOT NULL,
+    salt                VARCHAR(32) NOT NULL,
+    role                USER_ROLE DEFAULT 'user' NOT NULL
 );
 
 CREATE TABLE Comics.Message (
     messageID           SERIAL PRIMARY KEY,
     senderID            INTEGER NOT NULL,
     receiverID          INTEGER NOT NULL,
-    subject             VARCHAR(64),
-    content             VARCHAR(5000),
-    read                BOOLEAN DEFAULT false,
-    timeSent            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (senderID) REFERENCES Comics.Account(accountID),
-    FOREIGN KEY (receiverID) REFERENCES Comics.Account(accountID)
+    subject             VARCHAR(64) NOT NULL,
+    content             VARCHAR(5000) NOT NULL,
+    read                BOOLEAN DEFAULT false NOT NULL,
+    timeSent            TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    FOREIGN KEY (senderID) REFERENCES Comics.Account(accountID) ON DELETE CASCADE,
+    FOREIGN KEY (receiverID) REFERENCES Comics.Account(accountID) ON DELETE CASCADE
 );
 
 CREATE TABLE Comics.Comic (
     comicID             SERIAL PRIMARY KEY,
     accountID           INTEGER NOT NULL,
-    title               VARCHAR(50) UNIQUE,
-    comicURL            VARCHAR(30) UNIQUE,
-    thumbnailURL        VARCHAR(255),
-    published           BOOLEAN DEFAULT false,
-    description         VARCHAR(500),
-    FOREIGN KEY (accountID) REFERENCES Comics.Account(accountID)
+    title               VARCHAR(50) UNIQUE NOT NULL,
+    comicURL            VARCHAR(30) UNIQUE NOT NULL,
+    thumbnailURL        VARCHAR(255) NOT NULL,
+    published           BOOLEAN DEFAULT false NOT NULL,
+    description         VARCHAR(500) NOT NULL,
+    created             DATE DEFAULT CURRENT_DATE NOT NULL,
+    updated             DATE DEFAULT CURRENT_DATE NOT NULL,
+    FOREIGN KEY (accountID) REFERENCES Comics.Account(accountID) ON DELETE CASCADE
 );
 
 CREATE TABLE Comics.Volume (
     volumeID            SERIAL PRIMARY KEY,
     comicID             INTEGER NOT NULL,
-    volumeNumber        INTEGER,
+    volumeNumber        INTEGER NOT NULL,
     name                VARCHAR(50),
-    published           BOOLEAN DEFAULT false,
+    published           BOOLEAN DEFAULT false NOT NULL,
     UNIQUE( volumeNumber, comicID ),
-    FOREIGN KEY (comicID) REFERENCES Comics.Comic(comicID)
+    FOREIGN KEY (comicID) REFERENCES Comics.Comic(comicID) ON DELETE CASCADE
 );
 
 CREATE TABLE Comics.Chapter (
     chapterID           SERIAL PRIMARY KEY,
     volumeID            INTEGER,
-    chapterNumber       SERIAL,
+    chapterNumber       INTEGER NOT NULL,
     name                VARCHAR(50),
     published           BOOLEAN DEFAULT false,
-    comicID             INTEGER,
+    comicID             INTEGER NOT NULL,
     UNIQUE( chapterNumber, volumeID, comicID ),
-    FOREIGN KEY (volumeID) REFERENCES Comics.Volume(volumeID),
-    FOREIGN KEY (comicID) REFERENCES Comics.Comic(comicID)
+    FOREIGN KEY (volumeID) REFERENCES Comics.Volume(volumeID) ON DELETE CASCADE,
+    FOREIGN KEY (comicID) REFERENCES Comics.Comic(comicID) ON DELETE CASCADE
 );
 
 CREATE TABLE Comics.Page (
     pageID              SERIAL PRIMARY KEY,
-    pageNumber          SERIAL,
+    pageNumber          INTEGER NOT NULL,
     chapterID           INTEGER,
-    comicID             INTEGER,
-    authorID            INTEGER,
+    comicID             INTEGER NOT NULL,
     altText             VARCHAR(300),
     imgURL              VARCHAR(255),
     published           BOOLEAN DEFAULT false,
     UNIQUE ( pageNumber, comicID, chapterID ),
-    FOREIGN KEY (chapterID) REFERENCES Comics.Chapter(chapterID),
-    FOREIGN KEY (comicID) REFERENCES Comics.Comic(comicID)
+    FOREIGN KEY (chapterID) REFERENCES Comics.Chapter(chapterID) ON DELETE CASCADE,
+    FOREIGN KEY (comicID) REFERENCES Comics.Comic(comicID) ON DELETE CASCADE
 );

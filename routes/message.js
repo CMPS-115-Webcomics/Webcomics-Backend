@@ -6,7 +6,7 @@ const validators = require('./validators');
 const upload = require('../upload');
 const passwords = require('../passwords');
 
-router.post('/send', passwords.authorize, validators.requiredAttributes(['receiverID', 'subject', 'content']), async function (req, res, next) {
+router.post('/send', passwords.authorize, validators.isMod, validators.requiredAttributes(['receiverID', 'subject', 'content']), async function (req, res, next) {
     try {
         await db.query(`
             INSERT INTO Comics.Message 
