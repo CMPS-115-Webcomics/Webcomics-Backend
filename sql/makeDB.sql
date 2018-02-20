@@ -11,7 +11,7 @@ CREATE TABLE Comics.Account (
     emailVerified       BOOLEAN DEFAULT false NOT NULL,
     banned              BOOLEAN DEFAULT false NOT NULL,
     biography           VARCHAR(5000),
-    joined              DATE DEFAULT DATE NOT NULL,
+    joined              DATE DEFAULT CURRENT_DATE NOT NULL,
     password            VARCHAR(256) NOT NULL,
     salt                VARCHAR(32) NOT NULL,
     role                USER_ROLE DEFAULT 'user' NOT NULL
