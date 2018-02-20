@@ -14,8 +14,7 @@ router.get('/comics', async function (req, res, next) {
             FROM Comics.Comic ORDER BY title`);
         res.json(result.rows);
     } catch (err) {
-        console.error(err);
-        res.sendStatus(500);
+        next(err);
     }
 });
 
@@ -29,8 +28,7 @@ router.get('/myComics', passwords.authorize, async function (req, res, next) {
             ORDER BY title`, [req.user.accountID]);
         res.json(result.rows);
     } catch (err) {
-        console.error(err);
-        res.sendStatus(500);
+        next(err);
     }
 });
 
@@ -70,8 +68,7 @@ router.get('/get/:comicURL', async function (req, res, next) {
 
         res.json(comic);
     } catch (err) {
-        console.error(err);
-        res.sendStatus(500);
+        next(err);
     }
 
 });
@@ -104,16 +101,7 @@ router.post('/create',
             res.status(201)
                 .json(created.rows[0]);
         } catch (err) {
-            console.error(err);
-            if (err.constraint && err.table) {
-                res.status(400)
-                    .json({
-                        errorType: 'non-unique-value',
-                        attribute: err.constraint
-                    });
-                return;
-            }
-            res.sendStatus(500);
+            next(err);
         }
     }
 );
@@ -137,16 +125,7 @@ router.post('/addVolume',
             res.status(201)
                 .json(created.rows[0]);
         } catch (err) {
-            console.error(err);
-            if (err.constraint) {
-                res.status(400)
-                    .json({
-                        errorType: 'constraint-error',
-                        constraint: err.constraint
-                    });
-                return;
-            }
-            res.sendStatus(500);
+            next(err);
         }
     }
 );
@@ -172,16 +151,7 @@ router.post('/addChapter',
             res.status(201)
                 .json(chapterInsertion.rows[0]);
         } catch (err) {
-            console.error(err);
-            if (err.constraint) {
-                res.status(400)
-                    .json({
-                        errorType: 'constraint-error',
-                        constraint: err.constraint
-                    });
-                return;
-            }
-            res.sendStatus(500);
+            next(err);
         }
     }
 );
@@ -213,16 +183,7 @@ router.post(
 
             res.status(201).json();
         } catch (err) {
-            console.error(err);
-            if (err.constraint) {
-                res.status(400)
-                    .json({
-                        errorType: 'constraint-error',
-                        constraint: err.constraint
-                    });
-                return;
-            }
-            res.sendStatus(500);
+            next(err);
         }
     }
 );
@@ -230,10 +191,11 @@ router.post(
 // comic deletion
 
 //deletes images from the cloud by using their URLs
-function deleteImages(imageURLs){
-    for (let i=0; i<imageURLs.length; i++){
-        var splitURL = imageURLs[i].imgURL.split('/');
-        upload.deleteFromGCS(splitURL[4]);
+function deleteImages(rows) {
+    for (let row of rows) {
+        let url = row.imgURL || row.thumbnailURL;
+        let id = urls.split('/')[4];
+        upload.deleteFromGCS(id);
     }
 }
 
@@ -249,25 +211,23 @@ router.delete('/deleteComic',
                 SELECT imgURL
                 FROM Comics.Page
                 WHERE comicID = $1`, [req.body.comicID]);
-            
+
             deleteImages(urlQuery.rows);
+
+            let thumbnailQuery = await db.query(`
+                SELECT thumbnailURL
+                FROM Comics.Comic
+                WHERE comicID = $1`, [req.body.comicID]);
+
+            deleteImages(thumbnailQuery.rows);
 
             await db.query(`
                 DELETE FROM Comics.Comic
                 WHERE comicID = $1`, [req.body.comicID]);
-            res.status(200).send('Comic was deleted.');
 
+            res.status(200).send('Comic was deleted.');
         } catch (err) {
-            console.error(err);
-            if (err.constraint) {
-                res.status(400)
-                    .json({
-                        errorType: 'constraint-error',
-                        constraint: err.constraint
-                    });
-                return;
-            }
-            res.sendStatus(500);
+            next(err);
         }
     }
 );
@@ -290,25 +250,16 @@ router.delete('/deleteVolume',
                 SELECT imgURL
                 FROM Comics.Page
                 WHERE chapterID IN ($1)`, [volumeContentQuery.rows]);
-            
+
             deleteImages(urlQuery.rows);
 
             await db.query(`
                 DELETE FROM Comics.Volume
                 WHERE volumeID = $1`, [req.body.volumeID]);
-            res.status(200).send('Volume was deleted.');
-
+           
+             res.status(200).send('Volume was deleted.');
         } catch (err) {
-            console.error(err);
-            if (err.constraint) {
-                res.status(400)
-                    .json({
-                        errorType: 'constraint-error',
-                        constraint: err.constraint
-                    });
-                return;
-            }
-            res.sendStatus(500);
+            next(err);
         }
     }
 );
@@ -325,25 +276,16 @@ router.delete('/deleteChapter',
                 SELECT imgURL
                 FROM Comics.Page
                 WHERE chapterID = $1`, [req.body.chapterID]);
-            
+
             deleteImages(urlQuery.rows);
 
             await db.query(`
                 DELETE FROM Comics.Chapter
                 WHERE chapterID = $1`, [req.body.chapterID]);
+            
             res.status(200).send('Chapter was deleted.');
-
         } catch (err) {
-            console.error(err);
-            if (err.constraint) {
-                res.status(400)
-                    .json({
-                        errorType: 'constraint-error',
-                        constraint: err.constraint
-                    });
-                return;
-            }
-            res.sendStatus(500);
+            next(err);
         }
     }
 );
@@ -360,25 +302,16 @@ router.delete('/deletePage',
                 SELECT imgURL
                 FROM Comics.Page
                 WHERE pageID = $1`, [req.body.pageID]);
-            
+
             deleteImages(urlQuery.rows);
 
             await db.query(`
                 DELETE FROM Comics.Page
                 WHERE comicID = $1`, [req.body.pageID]);
-            res.status(200).send('Page was deleted.');
 
+            res.status(200).send('Page was deleted.');
         } catch (err) {
-            console.error(err);
-            if (err.constraint) {
-                res.status(400)
-                    .json({
-                        errorType: 'constraint-error',
-                        constraint: err.constraint
-                    });
-                return;
-            }
-            res.sendStatus(500);
+            next(err);
         }
     }
 );
