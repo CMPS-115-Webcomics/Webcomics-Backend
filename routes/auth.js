@@ -153,7 +153,7 @@ router.get('/testAuth', passwords.authorize, async (req, res) => {
 
 router.post('/ban',
     passwords.authorize,
-    validators.isModOrHigher,
+    validators.isMod,
     validators.requiredAttributes(['accountID']),
     async (req, res) => {
         try {
