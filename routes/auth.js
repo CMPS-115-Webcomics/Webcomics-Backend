@@ -6,6 +6,14 @@ const email = require('../email');
 const express = require('express');
 const router = express.Router();
 
+function authResponce(accountID, role, username) {
+    return {
+        token: passwords.createUserToken(accountID, role),
+        username: username,
+        role: role,
+    }
+}
+
 router.post('/verifyReset', passwords.authorize, validators.requiredAttributes(['password']), async (req, res, next) => {
     try {
         const passwordData = await passwords.getHashedPassword(req.body.password);
@@ -13,16 +21,14 @@ router.post('/verifyReset', passwords.authorize, validators.requiredAttributes([
             UPDATE Comics.Account 
             SET password = $1, salt = $2 
             WHERE accountID = $3
-            RETURNING username, role;`, [
+            RETURNING accountId, username, role;`, [
             passwordData.hash,
             passwordData.salt,
             req.user.accountID
         ]);
+        let targetUser = queryResult.rows[0];
         res.status(200)
-            .json({
-                token: passwords.createUserToken(req.user.accountID, queryResult.rows[0].role),
-                username: queryResult.rows[0].username
-            });
+            .json(authResponce(targetUser.accountid, targetUser.role, targetUser.username));
     } catch (e) {
         next(err);
     }
@@ -85,10 +91,7 @@ router.post('/register', validators.requiredAttributes(['username', 'email', 'pa
         let result = queryResult.rows[0];
         email.sendVerificationEmail(result.email, result.accountid);
         res.status(201)
-            .json({
-                token: passwords.createUserToken(result.accountid, result.role),
-                username: req.body.username
-            });
+            .json(authResponce(result.accountid, result.role, req.body.username));
     } catch (e) {
         next(e);
     }
@@ -114,10 +117,7 @@ router.post('/login', validators.requiredAttributes(['usernameOrEmail', 'passwor
         }
         if (await passwords.checkPassword(req.body.password, targetUser.password, targetUser.salt)) {
             res.status(200)
-                .json({
-                    token: passwords.createUserToken(targetUser.accountid, targetUser.role),
-                    username: targetUser.username
-                });
+                .json(authResponce(targetUser.accountid, targetUser.role, targetUser.username));
             return;
         }
         res.status(403).send('Password Incorrect');
