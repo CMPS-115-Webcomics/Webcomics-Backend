@@ -11,7 +11,17 @@ function authResponce(accountID, role, username) {
         token: passwords.createUserToken(accountID, role),
         username: username,
         role: role,
-    }
+    };
+}
+
+async function isBanned(username) {
+    let res = await IDBDatabase.query('SELECT username FROM Comics.Account WHERE username = $1 AND banned = false', [username]);
+    return res.rowCount === 0;
+}
+
+async function isEmailAvalible(email) {
+    let res = await db.query(`SELECT email FROM Comics.Account WHERE email = $1;`, [email]);
+    return res.rowCount === 0;
 }
 
 router.post('/verifyReset', passwords.authorize, validators.requiredAttributes(['password']), async (req, res, next) => {
@@ -33,15 +43,6 @@ router.post('/verifyReset', passwords.authorize, validators.requiredAttributes([
         next(err);
     }
 });
-async function isBanned(username) {
-    let res = await IDBDatabase.query('SELECT username FROM Comics.Account WHERE username = $1 AND banned = false', [username]);
-    return res.rowCount === 0;
-}
-
-async function isEmailAvalible(email) {
-    let res = await db.query(`SELECT email FROM Comics.Account WHERE email = $1;`, [email]);
-    return res.rowCount === 0;
-}
 
 router.post('/requestReset', validators.requiredAttributes(['usernameOrEmail']), async (req, res, next) => {
     try {
@@ -105,7 +106,7 @@ router.post('/login', validators.requiredAttributes(['usernameOrEmail', 'passwor
             WHERE username = $1
                OR email    = $1`, [req.body.usernameOrEmail]);
         if (queryResult.rowCount == 0) {
-            res.message
+            res.message;
             res.status(400).send('No such account');
             return;
         }
@@ -150,33 +151,34 @@ router.get('/testAuth', passwords.authorize, async (req, res) => {
     res.json(req.user);
 });
 
-router.post('/ban', passwords.authorize, async(req,res) => {
-    try {
-        if (req.user.email) {
+router.post('/ban',
+    passwords.authorize,
+    validators.isModOrHigher,
+    validators.requiredAttributes(['accountID']),
+    async (req, res) => {
+        try {
             await db.query(`
-                UPDATE table_name
-                SET banned = true
-                WHERE accountID = $1;
-            `, [req.user.accountID]);
+            UPDATE Comics.Account
+            SET banned = true
+            WHERE accountID = $1;
+        `, [req.body.accountID]);
             res.sendStatus(200);
-        } else {
-            res.sendStatus(403);
+        } catch (err) {
+            res.sendStatus(500);
         }
-    } catch (err) {
-        res.sendStatus(500);
-    }
-})
-router.get('/banstate', async(req, res) => {
+    });
+
+router.get('/banstate', validators.requiredAttributes(['username']), async (req, res) => {
     try {
-        if (!hasRequiredAttributes(req.body, ['username'], res)) return;
-        const ok = await isBanned(req.body.username);
         res.status(200)
             .type('application/json')
-            .send({ ok: ok });
+            .send({
+                banned: await isBanned(req.body.username)
+            });
     } catch (err) {
         res.status(500)
             .send('Internal Failure');
     }
-})
+});
 
 module.exports = router;
