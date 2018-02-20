@@ -1,3 +1,5 @@
+'use strict';
+
 const db = require('../db');
 const validators = require('./validators');
 const passwords = require('../passwords.js');
@@ -6,23 +8,19 @@ const email = require('../email');
 const express = require('express');
 const router = express.Router();
 
-function authResponce(accountID, role, username) {
+const authResponce = (accountID, role, username) => {
     return {
         token: passwords.createUserToken(accountID, role),
-        username: username,
-        role: role,
+        username,
+        role
     };
-}
+};
 
-async function isBanned(username) {
-    let res = await IDBDatabase.query('SELECT username FROM Comics.Account WHERE username = $1 AND banned = false', [username]);
+const isBanned = async username => {
+    const res = await db.query('SELECT username FROM Comics.Account WHERE username = $1 AND banned = false', [username]);
     return res.rowCount === 0;
-}
+};
 
-async function isEmailAvalible(email) {
-    let res = await db.query(`SELECT email FROM Comics.Account WHERE email = $1;`, [email]);
-    return res.rowCount === 0;
-}
 
 router.post('/verifyReset', passwords.authorize, validators.requiredAttributes(['password']), async (req, res, next) => {
     try {
@@ -36,11 +34,12 @@ router.post('/verifyReset', passwords.authorize, validators.requiredAttributes([
             passwordData.salt,
             req.user.accountID
         ]);
-        let targetUser = queryResult.rows[0];
+        const targetUser = queryResult.rows[0];
         res.status(200)
             .json(authResponce(targetUser.accountid, targetUser.role, targetUser.username));
-    } catch (e) {
+    } catch (err) {
         next(err);
+        return;
     }
 });
 
@@ -59,13 +58,14 @@ router.post('/requestReset', validators.requiredAttributes(['usernameOrEmail']),
                 });
             return;
         }
-        let result = queryResult.rows[0];
+        const result = queryResult.rows[0];
         email.sendPasswordResetEmail(result.email, result.accountid);
         res.json({
             message: 'Reset email sent'
         });
     } catch (err) {
         next(err);
+        return;
     }
 });
 
@@ -89,12 +89,13 @@ router.post('/register', validators.requiredAttributes(['username', 'email', 'pa
             passwordData.hash,
             passwordData.salt
         ]);
-        let result = queryResult.rows[0];
+        const result = queryResult.rows[0];
         email.sendVerificationEmail(result.email, result.accountid);
         res.status(201)
             .json(authResponce(result.accountid, result.role, req.body.username));
     } catch (e) {
         next(e);
+        return;
     }
 });
 
@@ -105,8 +106,7 @@ router.post('/login', validators.requiredAttributes(['usernameOrEmail', 'passwor
             FROM Comics.Account 
             WHERE username = $1
                OR email    = $1`, [req.body.usernameOrEmail]);
-        if (queryResult.rowCount == 0) {
-            res.message;
+        if (queryResult.rowCount === 0) {
             res.status(400).send('No such account');
             return;
         }
@@ -124,6 +124,7 @@ router.post('/login', validators.requiredAttributes(['usernameOrEmail', 'passwor
         res.status(403).send('Password Incorrect');
     } catch (e) {
         next(e);
+        return;
     }
 });
 
@@ -143,6 +144,7 @@ router.post('/verifyEmail', passwords.authorize, async (req, res, next) => {
         }
     } catch (err) {
         next(err);
+        return;
     }
 });
 

@@ -1,12 +1,11 @@
+'use strict';
 const express = require('express');
-const app = express();
 const router = express.Router();
 const db = require('../db');
 const validators = require('./validators');
-const upload = require('../upload');
 const passwords = require('../passwords');
 
-router.post('/send', passwords.authorize, validators.isMod, validators.requiredAttributes(['receiverID', 'subject', 'content']), async function (req, res, next) {
+router.post('/send', passwords.authorize, validators.isMod, validators.requiredAttributes(['receiverID', 'subject', 'content']), async (req, res, next) => {
     try {
         await db.query(`
             INSERT INTO Comics.Message 
@@ -16,10 +15,11 @@ router.post('/send', passwords.authorize, validators.isMod, validators.requiredA
         res.sendStatus(200);
     } catch (err) {
         next(err);
+        return;
     }
 });
 
-router.post('/markRead', passwords.authorize, validators.requiredAttributes(['messageID']), async function (req, res, next) {
+router.post('/markRead', passwords.authorize, validators.requiredAttributes(['messageID']), async (req, res, next) => {
     try {
         await db.query(`
             UPDATE Comics.Message
@@ -29,12 +29,13 @@ router.post('/markRead', passwords.authorize, validators.requiredAttributes(['me
         res.sendStatus(200);
     } catch (err) {
         next(err);
+        return;
     }
 });
 
-router.get('/list', passwords.authorize, async function (req, res, next) {
+router.get('/list', passwords.authorize, async (req, res, next) => {
     try {
-        let result = await db.query(`
+        const result = await db.query(`
             SELECT acc.username as sender, msg.subject, msg.content, msg.read, msg.timeSent, msg.messageID
             FROM Comics.Message msg
             INNER JOIN Comics.Account AS acc ON msg.senderID = acc.accountID
@@ -43,6 +44,7 @@ router.get('/list', passwords.authorize, async function (req, res, next) {
         res.json(result.rows);
     } catch (err) {
         next(err);
+        return;
     }
 });
 

@@ -1,0 +1,10 @@
+{
+  "extends": "walmart/configurations/es6-node",
+  "rules": {
+    "quotes": ["error", "single"],
+    "no-magic-numbers": "off",
+    "new-cap": "off",
+    "max-params": "off",
+    "no-console": "off"
+  }
+}

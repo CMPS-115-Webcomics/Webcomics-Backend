@@ -1,37 +1,36 @@
-var express = require('express');
-var path = require('path');
-var favicon = require('serve-favicon');
-var logger = require('morgan');
-var cookieParser = require('cookie-parser');
-var bodyParser = require('body-parser');
-var db = require('./db');
+'use strict';
+const express = require('express');
+const logger = require('morgan');
+const cookieParser = require('cookie-parser');
+const bodyParser = require('body-parser');
 
-var cors = require('cors')
+const cors = require('cors');
 
-var index = require('./routes/index');
-var users = require('./routes/users');
-var auth = require('./routes/auth');
-var comic = require('./routes/comic');
-var message = require('./routes/message');
-var availability = require('./routes/availability');
+const index = require('./routes/index');
+const auth = require('./routes/auth');
+const comic = require('./routes/comic');
+const message = require('./routes/message');
+const availability = require('./routes/availability');
 
-var app = express();
+const app = express();
 
-var whitelist = new Set([
-  'http://localhost:4200', 
-  'https://comichub.io', 
+const whitelist = new Set([
+  'http://localhost:4200',
+  'https://comichub.io',
   'https://silent-thunder-192708.firebaseapp.com',
   undefined
 ]);
-var corsOptions = {
-  origin: function (origin, callback) {
+const corsOptions = {
+  origin (origin, callback) {
     if (whitelist.has(origin)) {
-      callback(null, true)
+      callback(null, true);
+      return;
     } else {
-      callback(new Error(`Origin "${origin}" not allowed by CORS`))
+      callback(new Error(`Origin "${origin}" not allowed by CORS`));
+      return;
     }
   }
-}
+};
 
 app.use(cors(corsOptions));
 
@@ -43,21 +42,20 @@ app.use(bodyParser.urlencoded({
 app.use(cookieParser());
 
 app.use('/', index);
-app.use('/api/users', users);
 app.use('/api/auth', auth);
 app.use('/api/comics', comic);
 app.use('/api/messages', message);
 app.use('/api/availability', availability);
 
 // catch 404 and forward to error handler
-app.use(function (req, res, next) {
-  var err = new Error('Not Found');
+app.use((req, res, next) => {
+  const err = new Error('Not Found');
   err.status = 404;
   next(err);
 });
 
 // error handler
-app.use(function (err, req, res, next) {
+app.use((err, req, res) => {
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};

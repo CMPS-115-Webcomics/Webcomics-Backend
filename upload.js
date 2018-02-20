@@ -1,3 +1,5 @@
+'use strict';
+
 const Storage = require('@google-cloud/storage');
 const Multer = require('multer');
 const config = require('./config');
@@ -14,13 +16,14 @@ const multer = Multer({
     }
 });
 
-function getPublicUrl(filename) {
+const getPublicUrl = filename => {
     return `https://storage.googleapis.com/${config.cloudBucket}/${filename}`;
-}
+};
 
-function sendUploadToGCS(req, res, next) {
+const sendUploadToGCS = (req, res, next) => {
     if (!req.file) {
-        return next();
+        next();
+        return;
     }
 
     const gcsname = Date.now() + req.file.originalname;
@@ -32,7 +35,7 @@ function sendUploadToGCS(req, res, next) {
         }
     });
 
-    stream.on('error', (err) => {
+    stream.on('error', err => {
         req.file.cloudStorageError = err;
         next(err);
     });
@@ -46,22 +49,23 @@ function sendUploadToGCS(req, res, next) {
     });
 
     stream.end(req.file.buffer);
-}
+};
 
-function deleteFromGCS(filename) {
+const deleteFromGCS = filename => {
     bucket
         .file(filename)
         .delete()
         .then(() => {
-            console.log(`gs://${bucketName}/${filename} deleted.`);
+            console.log(`gs://${config.cloudBucket}/${filename} deleted.`);
         })
         .catch(err => {
             console.error('ERROR:', err);
         });
-}
+};
 
 module.exports = {
     getPublicUrl,
     sendUploadToGCS,
+    deleteFromGCS,
     multer
 };

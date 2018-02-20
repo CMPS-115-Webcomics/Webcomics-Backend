@@ -1,11 +1,13 @@
+'use strict';
+
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const config = require('./config');
 const db = require('./db');
 
-const emailVerificationExpirationTime = "7d";
-const passwordResetExpirationTime = "1h";
-const userTokenExpirationTime = "7d";
+const emailVerificationExpirationTime = '7d';
+const passwordResetExpirationTime = '1h';
+const userTokenExpirationTime = '7d';
 
 const secret = config.jwtSecret;
 if (secret === 'TestSecret') {
@@ -22,28 +24,28 @@ const signJWT = (payload, expirationTime) => {
   return jwt.sign(payload, secret, {
     expiresIn: expirationTime
   });
-}
+};
 
 const createUserToken = (accountID, role) => {
   return signJWT({
-    accountID: accountID,
-    role: role
+    accountID,
+    role
   }, userTokenExpirationTime);
-}
+};
 
-const createEmailVerificationToken = (accountID) => {
+const createEmailVerificationToken = accountID => {
   return signJWT({
-    accountID: accountID,
+    accountID,
     email: true
   }, emailVerificationExpirationTime);
-}
+};
 
-const createPasswordResetToken = (accountID) => {
+const createPasswordResetToken = accountID => {
   return signJWT({
-    accountID: accountID,
+    accountID,
     password: true
   }, passwordResetExpirationTime);
-}
+};
 
 const needsAuth = async (req, res, next) => {
   try {
@@ -54,7 +56,7 @@ const needsAuth = async (req, res, next) => {
     return;
   }
   try {
-    let bannedQuery = await db.query(`SELECT banned FROM Comics.Account WHERE accountID = $1`, [req.user.accountID]);
+    const bannedQuery = await db.query('SELECT banned FROM Comics.Account WHERE accountID = $1', [req.user.accountID]);
     const isBanned = bannedQuery.rows[0].banned;
     if (isBanned) {
       res.status(403)
@@ -63,11 +65,12 @@ const needsAuth = async (req, res, next) => {
     }
   } catch (e) {
     next(e);
+    return;
   }
   next();
-}
+};
 
-const getHashedPassword = (password) => {
+const getHashedPassword = password => {
   const salt = genRandomString(32);
   return new Promise((fulfill, reject) => {
     crypto.pbkdf2(password, salt, 100000, 128, 'sha512', (err, derivedKey) => {
@@ -77,7 +80,7 @@ const getHashedPassword = (password) => {
       }
       fulfill({
         hash: derivedKey.toString('base64'),
-        salt: salt
+        salt
       });
     });
   });
@@ -96,10 +99,10 @@ const checkPassword = (candidate, hash, salt) => {
 };
 
 module.exports = {
-  getHashedPassword: getHashedPassword,
-  checkPassword: checkPassword,
-  createUserToken: createUserToken,
-  createEmailVerificationToken: createEmailVerificationToken,
-  createPasswordResetToken: createPasswordResetToken,
+  getHashedPassword,
+  checkPassword,
+  createUserToken,
+  createEmailVerificationToken,
+  createPasswordResetToken,
   authorize: needsAuth
-}
+};

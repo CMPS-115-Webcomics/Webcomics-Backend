@@ -1,9 +1,11 @@
+'use strict';
+
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
 
-function checkAvalibility(table, attribute) {
-    return async (req, res, next ) => {
+const checkAvalibility = (table, attribute) => {
+    return async (req, res, next) => {
         try {
             const query = await db.query(`SELECT ${attribute} FROM Comics.${table} WHERE ${attribute}=$1`, [req.params[attribute]]);
             res.json({
@@ -11,13 +13,14 @@ function checkAvalibility(table, attribute) {
             });
         } catch (err) {
             next(err);
+            return;
         }
     };
-}
+};
 
 router.get('/emailorpassword/:nameOrPass', async (req, res, next) => {
     try {
-        let nameOrPass = req.params.nameOrPass.toString();
+        const nameOrPass = req.params.nameOrPass.toString();
         const query = await db.query(`
             SELECT accountID 
             FROM Comics.Account 
@@ -28,6 +31,7 @@ router.get('/emailorpassword/:nameOrPass', async (req, res, next) => {
         });
     } catch (err) {
         next(err);
+        return;
     }
 });
 
