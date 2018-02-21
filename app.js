@@ -1,7 +1,6 @@
 'use strict';
 const express = require('express');
 const logger = require('morgan');
-const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
 
 const cors = require('cors');
@@ -32,14 +31,12 @@ const corsOptions = {
   }
 };
 
-app.use(cors(corsOptions));
-
 app.use(logger('dev'));
+app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
   extended: false
 }));
-app.use(cookieParser());
 
 app.use('/', index);
 app.use('/api/auth', auth);
