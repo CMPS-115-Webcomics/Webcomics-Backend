@@ -1,4 +1,5 @@
 'use strict';
+require('make-promises-safe');
 const express = require('express');
 const logger = require('morgan');
 const bodyParser = require('body-parser');

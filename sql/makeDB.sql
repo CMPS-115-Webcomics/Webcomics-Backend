@@ -1,4 +1,3 @@
-DROP SCHEMA Comics CASCADE; 
 CREATE SCHEMA Comics;
 
 CREATE TYPE USER_ROLE AS ENUM ('user', 'mod', 'admin');
