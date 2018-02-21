@@ -6,5 +6,8 @@
     "new-cap": "off",
     "max-params": "off",
     "no-console": "off"
+  },
+  "env": {
+    "jasmine":true
   }
 }
