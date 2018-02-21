@@ -50,21 +50,21 @@ router.get('/get/:comicURL', async (req, res, next) => {
         const comic = comicQuery.rows[0];
         const comicID = comic.comicid;
 
-        comic.chapters = await db.query(`
+        comic.chapters = (await db.query(`
             SELECT *
             FROM Comics.Chapter
             WHERE comicID = $1
-            ORDER BY chapterNumber`, [comicID]).rows;
+            ORDER BY chapterNumber`, [comicID])).rows;
 
-        comic.volumes = await db.query(`SELECT *
+        comic.volumes = (await db.query(`SELECT *
             FROM Comics.Volume
             WHERE comicID = $1
-            ORDER BY volumeNumber`, [comicID]).rows;
+            ORDER BY volumeNumber`, [comicID])).rows;
 
-        comic.pages = await db.query(`SELECT *
+        comic.pages = (await db.query(`SELECT *
             FROM Comics.Page
             WHERE comicID = $1
-            ORDER BY pageNumber`, [comicID]).rows;
+            ORDER BY pageNumber`, [comicID])).rows;
 
         res.json(comic);
     } catch (err) {
