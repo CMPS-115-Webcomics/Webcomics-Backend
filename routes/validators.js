@@ -1,5 +1,5 @@
 'use strict';
-const db = require('../db');
+const { db } = require('../db');
 
 /**
  * Validates that a user has permission to modify a comic.

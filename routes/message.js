@@ -1,7 +1,7 @@
 'use strict';
 const express = require('express');
 const router = express.Router();
-const db = require('../db');
+const { db } = require('../db');
 const validators = require('./validators');
 const tokens = require('../tokens');
 

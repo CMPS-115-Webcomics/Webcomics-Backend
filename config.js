@@ -13,6 +13,11 @@ const config = {
         database: json.SQL_DATABASE || process.env.SQL_DATABASE || 'postgres',
         password: json.SQL_PASSWORD || process.env.SQL_PASSWORD || 'postgres'
     },
+    admin: {
+        name: json.ADMIN_NAME || process.env.ADMIN_NAME || 'admin',
+        password: json.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD,
+        email: json.ADMIN_EMAIL || process.env.ADMIN_EMAIL
+    },
     enviroment: process.env.NODE_ENV,
     cloudProject: json.GCLOUD_PROJECT || process.env.GCLOUD_PROJECT,
     cloudBucket: json.CLOUD_BUCKET || process.env.CLOUD_BUCKET,

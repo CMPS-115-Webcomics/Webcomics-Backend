@@ -3,8 +3,9 @@ require('make-promises-safe');
 const express = require('express');
 const logger = require('morgan');
 const bodyParser = require('body-parser');
-
 const cors = require('cors');
+const {startDB} = require('./db');
+const users = require('./models/users');
 
 const index = require('./routes/index');
 const auth = require('./routes/auth');
@@ -13,6 +14,12 @@ const message = require('./routes/message');
 const availability = require('./routes/availability');
 
 const app = express();
+
+const setup = async () => {
+  await startDB();
+  await users.initilize();
+};
+setup();
 
 const whitelist = new Set([
   'http://localhost:4200',

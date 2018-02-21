@@ -1,10 +1,11 @@
 'use strict';
 
-const db = require('../db');
+const { db } = require('../db');
 const validators = require('./validators');
 const passwords = require('../passwords');
 const tokens = require('../tokens');
 const email = require('../email');
+const users = require('../models/users');
 
 const express = require('express');
 const router = express.Router();
@@ -86,28 +87,9 @@ router.post('/requestReset', validators.requiredAttributes(['usernameOrEmail']),
 
 router.post('/register', validators.requiredAttributes(['username', 'email', 'password']), async (req, res, next) => {
     try {
-        const passwordData = await passwords.getHashedPassword(req.body.password);
-        const queryResult = await db.query(`
-        INSERT INTO Comics.Account (
-            username,
-            profileURL,
-            email,
-            biography,
-            password,
-            salt
-        ) VALUES ($1, $2, $3, $4, $5, $6)
-        RETURNING accountID, role, email;`, [
-            req.body.username,
-            req.body.profileURL,
-            req.body.email.toLowerCase(),
-            '',
-            passwordData.hash,
-            passwordData.salt
-        ]);
-        const result = queryResult.rows[0];
-        email.sendVerificationEmail(result.email, result.accountid);
+        const authData = await users.create(req.body, 'user');
         res.status(201)
-            .json(authResponce(result.accountid, result.role, req.body.username));
+            .json(authData);
     } catch (e) {
         next(e);
         return;
