@@ -18,6 +18,7 @@ const config = {
         password: json.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD,
         email: json.ADMIN_EMAIL || process.env.ADMIN_EMAIL
     },
+    instanceConnecitonName: json.INSTANCE_CONNECTION_NAME || process.env.INSTANCE_CONNECTION_NAME,
     enviroment: process.env.NODE_ENV,
     cloudProject: json.GCLOUD_PROJECT || process.env.GCLOUD_PROJECT,
     cloudBucket: json.CLOUD_BUCKET || process.env.CLOUD_BUCKET,
