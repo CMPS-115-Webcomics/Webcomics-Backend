@@ -80,6 +80,7 @@ router.post('/create',
     tokens.authorize,
     upload.multer.single('thumbnail'),
     validators.requiredAttributes(['title', 'comicURL', 'description']),
+    upload.resizeTo(375, 253),
     upload.sendUploadToGCS,
     async (req, res, next) => {
         if (!req.file || !req.file.cloudStoragePublicUrl) {

@@ -3,6 +3,7 @@
 const Storage = require('@google-cloud/storage');
 const Multer = require('multer');
 const config = require('./config');
+const sharp = require('sharp');
 
 const storage = Storage({
     projectId: config.cloudProject
@@ -18,6 +19,24 @@ const multer = Multer({
 
 const getPublicUrl = filename => {
     return `https://storage.googleapis.com/${config.cloudBucket}/${filename}`;
+};
+
+const resizeTo = (width, height) => async (req, res, next) => {
+    if (!req.file) {
+        next();
+        return;
+    }
+    try {
+        req.file.buffer = await sharp(req.file.buffer)
+            .resize(width, height)
+            .ignoreAspectRatio()
+            .toBuffer();
+        next();
+        return;
+    } catch (err) {
+        next(err);
+        return;
+    }
 };
 
 const sendUploadToGCS = (req, res, next) => {
@@ -67,5 +86,6 @@ module.exports = {
     getPublicUrl,
     sendUploadToGCS,
     deleteFromGCS,
+    resizeTo,
     multer
 };
