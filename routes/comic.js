@@ -11,7 +11,7 @@ const tokens = require('../tokens');
 router.get('/comics', async (req, res, next) => {
     try {
         const result = await db.query(`
-            SELECT comicID, accountID, title, comicURL, description, thumbnailURL 
+            SELECT comicID, accountID, title, comicURL, tagline, description, thumbnailURL 
             FROM Comics.Comic ORDER BY title`);
         res.json(result.rows);
     } catch (err) {
@@ -79,7 +79,7 @@ router.get('/get/:comicURL', async (req, res, next) => {
 router.post('/create',
     tokens.authorize,
     upload.multer.single('thumbnail'),
-    validators.requiredAttributes(['title', 'comicURL', 'description']),
+    validators.requiredAttributes(['title', 'comicURL', 'tagline', 'description']),
     upload.resizeTo(375, 253),
     upload.sendUploadToGCS,
     async (req, res, next) => {
@@ -90,14 +90,15 @@ router.post('/create',
         try {
             const created = await db.query(`
                 INSERT INTO Comics.Comic 
-                (accountID, title, comicURL, thumbnailURL, description)
-                VALUES ($1, $2, $3, $4, $5)
+                (accountID, title, comicURL, thumbnailURL, tagline, description)
+                VALUES ($1, $2, $3, $4, $5, $6)
                 RETURNING comicID;
                 `, [
                 req.user.accountID,
                 req.body.title,
                 req.body.comicURL,
                 req.file.cloudStoragePublicUrl,
+                req.body.tagline,
                 req.body.description
             ]);
             res.status(201)

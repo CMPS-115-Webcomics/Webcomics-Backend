@@ -1,6 +1,6 @@
 CREATE SCHEMA Comics;
 
-CREATE TYPE USER_ROLE AS ENUM ('user', 'mod', 'admin');
+CREATE TYPE Comics.USER_ROLE AS ENUM ('user', 'mod', 'admin');
 
 CREATE TABLE Comics.Account (
     accountID           SERIAL PRIMARY KEY,
@@ -13,7 +13,7 @@ CREATE TABLE Comics.Account (
     joined              DATE DEFAULT CURRENT_DATE NOT NULL,
     password            VARCHAR(256) NOT NULL,
     salt                VARCHAR(32) NOT NULL,
-    role                USER_ROLE DEFAULT 'user' NOT NULL
+    role                Comics.USER_ROLE DEFAULT 'user' NOT NULL
 );
 
 CREATE TABLE Comics.Message (
@@ -35,7 +35,8 @@ CREATE TABLE Comics.Comic (
     comicURL            VARCHAR(30) UNIQUE NOT NULL,
     thumbnailURL        VARCHAR(255) NOT NULL,
     published           BOOLEAN DEFAULT false NOT NULL,
-    description         VARCHAR(500) NOT NULL,
+    tagline             VARCHAR(30) NOT NULL,
+    description         VARCHAR(1000) NOT NULL,
     created             DATE DEFAULT CURRENT_DATE NOT NULL,
     updated             DATE DEFAULT CURRENT_DATE NOT NULL,
     FOREIGN KEY (accountID) REFERENCES Comics.Account(accountID) ON DELETE CASCADE
