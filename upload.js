@@ -30,6 +30,7 @@ const resizeTo = (width, height) => async (req, res, next) => {
         req.file.buffer = await sharp(req.file.buffer)
             .resize(width, height)
             .ignoreAspectRatio()
+            .withoutEnlargement()
             .toBuffer();
         next();
         return;
