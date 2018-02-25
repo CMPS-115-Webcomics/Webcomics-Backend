@@ -24,7 +24,7 @@ router.get('/comics', async (req, res, next) => {
 router.get('/myComics', tokens.authorize, async (req, res, next) => {
     try {
         const result = await db.query(`
-            SELECT comicID, accountID, title, comicURL, description, thumbnailURL 
+            SELECT comicID, accountID, title, comicURL, tagline, description, thumbnailURL 
             FROM Comics.Comic
             WHERE accountID = $1
             ORDER BY title`, [req.user.accountID]);
