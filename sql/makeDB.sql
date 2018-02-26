@@ -4,9 +4,9 @@ CREATE TYPE Comics.USER_ROLE AS ENUM ('user', 'mod', 'admin');
 
 CREATE TABLE Comics.Account (
     accountID           SERIAL PRIMARY KEY,
-    username            VARCHAR(30) UNIQUE NOT NULL,
-    profileURL          VARCHAR(30) UNIQUE,
-    email               VARCHAR(254) UNIQUE NOT NULL,
+    username            VARCHAR(30) NOT NULL CHECK(username SIMILAR TO '[a-zA-Z0-9]+( [a-zA-Z0-9]+)*'),
+    profileURL          VARCHAR(30) UNIQUE CHECK(profileURL SIMILAR TO '[-a-z0-9]+'),
+    email               VARCHAR(254) NOT NULL,
     emailVerified       BOOLEAN DEFAULT false NOT NULL,
     banned              BOOLEAN DEFAULT false NOT NULL,
     biography           VARCHAR(5000),
@@ -15,6 +15,10 @@ CREATE TABLE Comics.Account (
     salt                VARCHAR(32) NOT NULL,
     role                Comics.USER_ROLE DEFAULT 'user' NOT NULL
 );
+
+-- Case insensative unique constraints
+CREATE UNIQUE INDEX unique_username ON Comics.Account (LOWER(username));
+CREATE UNIQUE INDEX unique_email    ON Comics.Account (LOWER(email));
 
 CREATE TABLE Comics.Message (
     messageID           SERIAL PRIMARY KEY,
@@ -32,7 +36,7 @@ CREATE TABLE Comics.Comic (
     comicID             SERIAL PRIMARY KEY,
     accountID           INTEGER NOT NULL,
     title               VARCHAR(50) UNIQUE NOT NULL,
-    comicURL            VARCHAR(30) UNIQUE NOT NULL,
+    comicURL            VARCHAR(30) UNIQUE NOT NULL CHECK(comicURL SIMILAR TO '[-a-z0-9]+'),
     thumbnailURL        VARCHAR(255) NOT NULL,
     published           BOOLEAN DEFAULT false NOT NULL,
     tagline             VARCHAR(30) NOT NULL,
