@@ -1,6 +1,6 @@
 CREATE SCHEMA Comics;
 
-CREATE TYPE USER_ROLE AS ENUM ('user', 'mod', 'admin');
+CREATE TYPE user_role AS ENUM ('user', 'mod', 'admin');
 
 CREATE TABLE Comics.Account (
     accountID           SERIAL PRIMARY KEY,
@@ -13,7 +13,7 @@ CREATE TABLE Comics.Account (
     joined              DATE DEFAULT CURRENT_DATE NOT NULL,
     password            VARCHAR(256) NOT NULL,
     salt                VARCHAR(32) NOT NULL,
-    role                USER_ROLE DEFAULT 'user' NOT NULL
+    role                user_role DEFAULT 'user' NOT NULL
 );
 
 CREATE TABLE Comics.Message (
@@ -75,3 +75,14 @@ CREATE TABLE Comics.Page (
     FOREIGN KEY (chapterID) REFERENCES Comics.Chapter(chapterID) ON DELETE CASCADE,
     FOREIGN KEY (comicID) REFERENCES Comics.Comic(comicID) ON DELETE CASCADE
 );
+
+CREATE TYPE day AS ENUM ('mon', 'tues', 'wed', 'thurs', 'fri', 'sat', 'sun');
+CREATE TYPE release_freq AS ENUM ('weekly', 'monthly');
+
+CREATE TABLE Comics.Schedule (
+    comicID             INTEGER,
+    updateDay           day,
+    updateType          release_freq NOT NULL,
+    PRIMARY KEY (comicID, updateDay),
+    FOREIGN KEY (comicID) REFERENCES Comics.Comic(comicID) ON DELETE CASCADE
+)
