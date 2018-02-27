@@ -15,7 +15,7 @@ const router = express.Router();
  *
  * @param {number} accountID Id of account that logged in
  * @param {string} role Role of the user
- * @param {string} username Name of th user
+ * @param {string} username Name of the user
  * @returns {{token: string, role:string, username:string}}} a
  */
 const authResponce = (accountID, role, username) => {
@@ -101,8 +101,8 @@ router.post('/login', validators.requiredAttributes(['usernameOrEmail', 'passwor
         const queryResult = await db.query(`
             SELECT password, salt, accountID, username, role, banned
             FROM Comics.Account 
-            WHERE username = $1
-               OR email    = $1`, [req.body.usernameOrEmail]);
+            WHERE LOWER(username) = LOWER($1)
+               OR LOWER(email) = LOWER($1)`, [req.body.usernameOrEmail]);
         if (queryResult.rowCount === 0) {
             res.status(400).send('No such account');
             return;

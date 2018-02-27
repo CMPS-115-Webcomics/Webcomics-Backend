@@ -39,8 +39,8 @@ router.get('/emailorpassword/:nameOrPass', async (req, res, next) => {
         const query = await db.query(`
             SELECT accountID 
             FROM Comics.Account 
-            WHERE username = $1
-               OR email    = $2`, [nameOrPass, nameOrPass.toLowerCase()]);
+            WHERE LOWER(username) = LOWER($1)
+               OR LOWER(email)    = LOWER($2)`, [nameOrPass, nameOrPass.toLowerCase()]);
         res.json({
             available: query.rowCount === 0
         });
