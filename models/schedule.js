@@ -15,7 +15,7 @@ const releaseChecker = schedule.scheduleJob(rule, async() => {
         GROUP BY comicID, chapterID`);
 
     const nullVal = -1;
-    for (const row of nextUnpublishedPage.rows){
+    for await (const row of nextUnpublishedPage.rows){
         const pageNum = row.pageNumber;
         const comicID = row.comicID;
         const chapID = row.chapID || nullVal;
