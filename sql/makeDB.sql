@@ -1,3 +1,5 @@
+DROP SCHEMA Comics CASCADE;
+
 CREATE SCHEMA Comics;
 
 CREATE TYPE user_role AS ENUM ('user', 'mod', 'admin');
@@ -63,6 +65,8 @@ CREATE TABLE Comics.Chapter (
     FOREIGN KEY (comicID) REFERENCES Comics.Comic(comicID) ON DELETE CASCADE
 );
 
+CREATE UNIQUE INDEX chapter_max_null ON Comics.Chapter(chapterNumber, comicID) WHERE volumeID IS NULL;
+
 CREATE TABLE Comics.Page (
     pageID              SERIAL PRIMARY KEY,
     pageNumber          INTEGER NOT NULL,
@@ -76,13 +80,18 @@ CREATE TABLE Comics.Page (
     FOREIGN KEY (comicID) REFERENCES Comics.Comic(comicID) ON DELETE CASCADE
 );
 
-CREATE TYPE day AS ENUM ('mon', 'tues', 'wed', 'thurs', 'fri', 'sat', 'sun');
+CREATE UNIQUE INDEX page_max_null ON Comics.Page(pageNumber, comicID) WHERE chapterID IS NULL;
+
 CREATE TYPE release_freq AS ENUM ('weekly', 'monthly');
 
 CREATE TABLE Comics.Schedule (
     comicID             INTEGER,
-    updateDay           day,
+    updateDay           INTEGER,
     updateType          release_freq NOT NULL,
+    updateWeek          INTEGER,
     PRIMARY KEY (comicID, updateDay),
+    CONSTRAINT day_range CHECK (updateDay > 0 AND updateDay < 8),
+    CONSTRAINT week_range CHECK (updateWeek > 0 AND updateWeek < 6),
+    CONSTRAINT monthly_release CHECK (updateType = 'weekly' OR (updateType = 'monthly' AND updateWeek IS NOT NULL)),
     FOREIGN KEY (comicID) REFERENCES Comics.Comic(comicID) ON DELETE CASCADE
-)
+);
