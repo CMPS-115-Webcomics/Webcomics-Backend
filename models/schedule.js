@@ -29,7 +29,7 @@ const releaseChecker = schedule.scheduleJob(rule, async() => {
                     AND sched.comicID = p.comicID
                     AND sched.updateDay = TO_CHAR(CURRENT_TIMESTAMP, 'D')
                     AND (sched.updateType = 'weekly' 
-                        OR updateWeek = TO_CHAR(CURRENT_TIMESTAMP, 'W')`, [pageNum, comicID]);
+                        OR sched.updateWeek = TO_CHAR(CURRENT_TIMESTAMP, 'W')`, [pageNum, comicID]);
         }else{
             await db.query(`
             UPDATE Comics.Page p
@@ -39,7 +39,7 @@ const releaseChecker = schedule.scheduleJob(rule, async() => {
                     AND sched.comicID = p.comicID
                     AND sched.updateDay = TO_CHAR(CURRENT_TIMESTAMP, 'D')
                     AND (sched.updateType='weekly' 
-                        OR updateWeek=TO_CHAR(CURRENT_TIMESTAMP, 'W')`, [pageNum, comicID, chapID]); 
+                        OR sched.updateWeek=TO_CHAR(CURRENT_TIMESTAMP, 'W')`, [pageNum, comicID, chapID]); 
 
             volumeIDQuery = await db.query(`
             UPDATE Comics.Chapter
