@@ -50,5 +50,9 @@ const releaseChecker = schedule.scheduleJob(rule, async() => {
             SET published = 't'
             WHERE published = 'f' AND volumeID = $1`, [volumeIDQuery.rows[0].volumeID]);
         }
+        await db.query(`
+        UPDATE Comics.Comic
+        SET published = 't'
+        WHERE published 'f' AND comicID = $1`, [comicID]);
     }
 });
