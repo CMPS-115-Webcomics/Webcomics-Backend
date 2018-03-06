@@ -20,41 +20,40 @@ const releaseChecker = schedule.scheduleJob(rule, async() => {
         const comicID = row.comicID;
         const chapID = row.chapID || nullVal;
 
-        if(chapID === nullVal){
-            await db.query(`
-                UPDATE Comics.Page p
+        const releaseDateQuery = await db.query(`
+            SELECT updateDay
+            FROM Comics.schedule
+            WHERE comicID = $1 AND updateDay = TO_CHAR(CURRENT_TIMESTAMP, 'D')
+                AND (sched.updateType = 'weekly' OR sched.updateWeek = TO_CHAR(CURRENT_TIMESTAMP, 'W'))
+        `, [comicID]);
+
+        if(releaseDateQuery.rowCount !== 0){
+            if(chapID === nullVal){
+                await db.query(`
+                    UPDATE Comics.Page
+                    SET published = 't'
+                    WHERE pageNumber = $1 AND comicID = $2 AND chapterID IS NULL`, [pageNum, comicID]);
+            }else{
+                await db.query(`
+                UPDATE Comics.Page
                 SET published = 't'
-                FROM Comics.schedule sched
-                WHERE p.pageNumber = $1 AND p.comicID = $2 AND p.chapterID IS NULL
-                    AND sched.comicID = p.comicID
-                    AND sched.updateDay = TO_CHAR(CURRENT_TIMESTAMP, 'D')
-                    AND (sched.updateType = 'weekly' 
-                        OR sched.updateWeek = TO_CHAR(CURRENT_TIMESTAMP, 'W')`, [pageNum, comicID]);
-        }else{
-            await db.query(`
-            UPDATE Comics.Page p
-            SET published = 't'
-            FROM Comics.schedule sched
-            WHERE p.pageNumber = $1 AND p.comicID = $2 AND p.chapterID = $3
-                    AND sched.comicID = p.comicID
-                    AND sched.updateDay = TO_CHAR(CURRENT_TIMESTAMP, 'D')
-                    AND (sched.updateType='weekly' 
-                        OR sched.updateWeek=TO_CHAR(CURRENT_TIMESTAMP, 'W')`, [pageNum, comicID, chapID]); 
+                WHERE p.pageNumber = $1 AND p.comicID = $2 AND p.chapterID = $3`, [pageNum, comicID, chapID]); 
 
-            volumeIDQuery = await db.query(`
-            UPDATE Comics.Chapter
-            SET published = 't'
-            WHERE published = 'f' AND chapterID = $1
-            RETURNING volumeID`, [chapID]);
+                volumeIDQuery = await db.query(`
+                UPDATE Comics.Chapter
+                SET published = 't'
+                WHERE published = 'f' AND chapterID = $1
+                RETURNING volumeID`, [chapID]);
 
+                await db.query(`
+                UPDATE Comics.Volume
+                SET published = 't'
+                WHERE published = 'f' AND volumeID = $1`, [volumeIDQuery.rows[0].volumeID]);
+            }
             await db.query(`
-            UPDATE Comics.Volume
+            UPDATE Comics.Comic
             SET published = 't'
-            WHERE published = 'f' AND volumeID = $1`, [volumeIDQuery.rows[0].volumeID]);
+            WHERE published = 'f' AND comicID = $1`, [comicID]);
         }
-        await db.query(`
-        UPDATE Comics.Comic
-        SET published = 't'
-        WHERE published = 'f' AND comicID = $1`, [comicID]);
     }
 });
