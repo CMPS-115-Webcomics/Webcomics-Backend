@@ -86,11 +86,11 @@ CREATE TYPE release_freq AS ENUM ('weekly', 'monthly');
 
 CREATE TABLE Comics.Schedule (
     comicID             INTEGER,
-    updateDay           INTEGER,
+    updateDay           INTEGER, -- Range is 1 to 7, where Sunday is 1 and Saturday is 7
     updateType          release_freq NOT NULL,
-    updateWeek          INTEGER,
+    updateWeek          INTEGER, -- Range is 1 to 5, where the first week of month is 1
     PRIMARY KEY (comicID, updateDay),
-    CONSTRAINT day_range CHECK (updateDay > 0 AND updateDay < 8),
+    CONSTRAINT day_range CHECK (updateDay > 0 AND updateDay < 8), 
     CONSTRAINT week_range CHECK (updateWeek > 0 AND updateWeek < 6),
     CONSTRAINT monthly_release CHECK (updateType = 'weekly' OR (updateType = 'monthly' AND updateWeek IS NOT NULL)),
     FOREIGN KEY (comicID) REFERENCES Comics.Comic(comicID) ON DELETE CASCADE
