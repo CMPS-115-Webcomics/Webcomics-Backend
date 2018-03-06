@@ -26,6 +26,7 @@ const releaseChecker = schedule.scheduleJob(rule, async() => {
                 SET published = 't'
                 FROM Comics.schedule sched
                 WHERE p.pageNumber = $1 AND p.comicID = $2 AND p.chapterID IS NULL
+                    AND sched.comicID = p.comicID
                     AND sched.updateDay = TO_CHAR(CURRENT_TIMESTAMP, 'D')
                     AND (sched.updateType = 'weekly' 
                         OR updateWeek = TO_CHAR(CURRENT_TIMESTAMP, 'W')`, [pageNum, comicID]);
@@ -35,6 +36,7 @@ const releaseChecker = schedule.scheduleJob(rule, async() => {
             SET published = 't'
             FROM Comics.schedule sched
             WHERE p.pageNumber = $1 AND p.comicID = $2 AND p.chapterID = $3
+                    AND sched.comicID = p.comicID
                     AND sched.updateDay = TO_CHAR(CURRENT_TIMESTAMP, 'D')
                     AND (sched.updateType='weekly' 
                         OR updateWeek=TO_CHAR(CURRENT_TIMESTAMP, 'W')`, [pageNum, comicID, chapID]); 
