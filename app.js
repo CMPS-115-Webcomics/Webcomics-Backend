@@ -4,7 +4,7 @@ const express = require('express');
 const logger = require('morgan');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const {startDB} = require('./db');
+const {startDB} = require('./models/db');
 const users = require('./models/users');
 
 const index = require('./routes/index');

@@ -1,6 +1,6 @@
 'use strict';
 const sched = require('node-schedule');
-const { db } = require('../db');
+const { db } = require('./db');
 
 const rule = new schedule.RecurrenceRule();
 rule.hour = 0;
