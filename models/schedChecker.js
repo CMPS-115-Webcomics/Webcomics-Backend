@@ -6,6 +6,9 @@ const rule = new schedule.RecurrenceRule();
 rule.hour = 0;
 rule.minute = 0;
 
+//automatically checks the release schedule every day
+//if today is a release day, then the associated comic's next unpublished page is published
+//if the released page is the first one in a chapter, volume, and/or comic, then they will be published too
 const releaseChecker = schedule.scheduleJob(rule, async() => {
 
    const nextUnpublishedPage = await db.query(`
