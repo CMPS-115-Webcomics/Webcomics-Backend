@@ -43,8 +43,12 @@ router.put('/enableProfile',
         try{
             await db.query(`
                 UPDATE Comics.Account
-                SET profileURL = $1
-                WHERE accountID = $2`, [req.user.accountID]
+                SET profileURL = $1, biography = $2
+                WHERE accountID = $3`, [
+                    req.body.profileURL,
+                    req.body.biography || null,
+                    req.user.accountID
+                ]
             );
         }catch(err){
             next(err);
@@ -55,7 +59,7 @@ router.put('/enableProfile',
 
 router.put('/editProfile', 
     tokens.authorize, 
-    validators.requiredAttributes(['username, biography']),
+    validators.requiredAttributes(['username']),
     async (req, res, next) => {
         try{
             await db.query(`
@@ -64,7 +68,8 @@ router.put('/editProfile',
                 WHERE accountID = $3`, [
                 req.body.username,
                 req.body.biography || null,
-                req.user.accountID]);
+                req.user.accountID]
+            );
         }catch(err){
             next(err);
             return;
