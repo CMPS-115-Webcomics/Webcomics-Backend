@@ -2,9 +2,7 @@
 
 const express = require('express');
 const router = express.Router();
-const {
-    db
-} = require('../db');
+const { db } = require('../models/db');
 const validators = require('./validators');
 const upload = require('../upload');
 const tokens = require('../tokens');

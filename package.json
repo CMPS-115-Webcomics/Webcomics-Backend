@@ -21,7 +21,7 @@
     "multer": "^1.3.0",
     "pg": "^7.4.1",
     "pg-format": "^1.0.4",
-    "sharp": "github:lovell/sharp#prebuild"
+    "sharp": "^0.20.0"
   },
   "devDependencies": {
     "babel-eslint": "^8.2.2",

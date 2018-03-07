@@ -1,7 +1,7 @@
 'use strict';
 
 const jwt = require('jsonwebtoken');
-const { db } = require('./db');
+const { db } = require('./models/db');
 const config = require('./config');
 
 const emailVerificationExpirationTime = '7d';

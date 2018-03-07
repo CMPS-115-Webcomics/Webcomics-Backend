@@ -1,8 +1,8 @@
 'use strict';
 
-const { db } = require('../db');
+const { db } = require('../models/db');
 const validators = require('./validators');
-const passwords = require('../passwords');
+const passwords = require('../models/passwords');
 const tokens = require('../tokens');
 const email = require('../email');
 const users = require('../models/users');

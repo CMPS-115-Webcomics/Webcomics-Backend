@@ -1,3 +1,5 @@
+DROP SCHEMA Comics CASCADE;
+
 CREATE SCHEMA Comics;
 
 CREATE TYPE Comics.USER_ROLE AS ENUM ('user', 'mod', 'admin');
@@ -68,6 +70,8 @@ CREATE TABLE Comics.Chapter (
     FOREIGN KEY (comicID) REFERENCES Comics.Comic(comicID) ON DELETE CASCADE
 );
 
+CREATE UNIQUE INDEX chapter_max_null ON Comics.Chapter(chapterNumber, comicID) WHERE volumeID IS NULL;
+
 CREATE TABLE Comics.Page (
     pageID              SERIAL PRIMARY KEY,
     pageNumber          INTEGER NOT NULL,
@@ -78,5 +82,21 @@ CREATE TABLE Comics.Page (
     published           BOOLEAN DEFAULT false,
     UNIQUE ( pageNumber, comicID, chapterID ),
     FOREIGN KEY (chapterID) REFERENCES Comics.Chapter(chapterID) ON DELETE CASCADE,
+    FOREIGN KEY (comicID) REFERENCES Comics.Comic(comicID) ON DELETE CASCADE
+);
+
+CREATE UNIQUE INDEX page_max_null ON Comics.Page(pageNumber, comicID) WHERE chapterID IS NULL;
+
+CREATE TYPE Comics.RELEASE_FREQUENCY  AS ENUM ('weekly', 'monthly');
+
+CREATE TABLE Comics.Schedule (
+    comicID             INTEGER,
+    updateDay           INTEGER, -- Range is 1 to 7, where Sunday is 1 and Saturday is 7
+    updateType          Comics.RELEASE_FREQUENCY NOT NULL,
+    updateWeek          INTEGER, -- Range is 1 to 5, where the first week of month is 1
+    PRIMARY KEY (comicID, updateDay),
+    CONSTRAINT day_range CHECK (updateDay > 0 AND updateDay < 8), 
+    CONSTRAINT week_range CHECK (updateWeek > 0 AND updateWeek < 6),
+    CONSTRAINT monthly_release CHECK (updateType = 'weekly' OR (updateType = 'monthly' AND updateWeek IS NOT NULL)),
     FOREIGN KEY (comicID) REFERENCES Comics.Comic(comicID) ON DELETE CASCADE
 );

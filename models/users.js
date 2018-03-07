@@ -2,8 +2,8 @@
 
 const {
     db
-} = require('../db');
-const passwords = require('../passwords');
+} = require('./db');
+const passwords = require('./passwords');
 const tokens = require('../tokens');
 const email = require('../email');
 const config = require('../config');
