@@ -21,8 +21,12 @@ const releasePages = async () => {
         const releaseDateQuery = await db.query(`
             SELECT updateDay
             FROM Comics.schedule
-            WHERE comicID = $1 AND updateDay = TO_CHAR(CURRENT_TIMESTAMP, 'D')
-                AND (sched.updateType = 'weekly' OR sched.updateWeek = TO_CHAR(CURRENT_TIMESTAMP, 'W'))
+            WHERE comicID = $1 
+              AND updateDay = TO_NUMBER(TO_CHAR(CURRENT_TIMESTAMP, 'D'),'99')
+              AND (sched.updateType = 'weekly' 
+              OR sched.updateWeek = 
+                to_number(to_char(current_timestamp, 'ww'), '99')  -
+                to_number(to_char(date_trunc('month',CURRENT_TIMESTAMP), 'WW'), '99') + 1)
         `, [comicID]);
 
         if (releaseDateQuery.rowCount !== 0) {
