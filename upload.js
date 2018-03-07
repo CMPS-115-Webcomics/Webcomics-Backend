@@ -106,10 +106,10 @@ const sizes = {
     high: 3840
 };
 
-const getName = originalName => {
+const getNameInfo = name => {
     return {
-        key: Date.now() + originalName.replace(/\.[^/.]+$/, ''),
-        ext: originalName.split('.').pop()
+        key: name.replace(/\.[^/.]+$/, ''),
+        ext: name.split('.').pop()
     };
 };
 
@@ -125,7 +125,7 @@ const sendUploadToGCS = multires => async (req, res, next) => {
     }
 
     try {
-        const name = getName(req.file.originalname);
+        const name = getNameInfo(Date.now() + req.file.originalname);
         req.file.fileKey = `${name.key}.${name.ext}`;
 
         if (multires) {
@@ -146,16 +146,38 @@ const sendUploadToGCS = multires => async (req, res, next) => {
     }
 };
 
-const deleteFromGCS = filename => {
-    bucket
-        .file(filename)
-        .delete()
-        .then(() => {
-            console.log(`gs://${config.cloudBucket}/${filename} deleted.`);
-        })
-        .catch(err => {
-            console.error('ERROR:', err);
-        });
+const getURLs = (key, multires) => {
+    const name = getNameInfo(key);
+
+    if (!multires) {
+        return [
+            `${name.key}.${name.ext}`,
+            `${name.key}.webp`
+        ];
+    }
+
+    const urls = [];
+
+    for (const sizename in sizes) {
+        urls.push(`${name.key}-${sizename}.${name.ext}`);
+        urls.push(`${name.key}-${sizename}.webp`);
+    }
+
+    return urls;
+};
+
+const deleteFromGCS = (filename, multires) => {
+    for (const url of getURLs(filename, multires)) {
+        bucket
+            .file(url)
+            .delete()
+            .then(() => {
+                console.log(`${url} deleted.`);
+            })
+            .catch(err => {
+                console.error(`Failed to delete ${url} due to`, err);
+            });
+    }
 };
 
 module.exports = {

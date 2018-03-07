@@ -201,15 +201,14 @@ router.post(
 //deletes images from the cloud by using their URLs
 const deleteImages = rows => {
     for (const row of rows) {
-        const url = row.imgURL || row.thumbnailURL;
-        const id = url.split('/')[4];
-        upload.deleteFromGCS(id);
+        const url = row.imgurl || row.thumbnailurl;
+        upload.deleteFromGCS(url, row.imgurl !== undefined);
     }
 };
 
 //deletes all images associated with the comic by using deleteImages
 //and removes the comic and all its contents from the database
-router.delete('/deleteComic',
+router.post('/deleteComic',
     tokens.authorize,
     validators.requiredAttributes(['comicID']),
     validators.canModifyComic,
@@ -243,7 +242,7 @@ router.delete('/deleteComic',
 
 //deletes a volume's associated images with deleteImages and
 //removes the volume and its contents from the database
-router.delete('/deleteVolume',
+router.post('/deleteVolume',
     tokens.authorize,
     validators.requiredAttributes(['volumeID']),
     validators.canModifyComic,
@@ -274,7 +273,7 @@ router.delete('/deleteVolume',
 
 //deletes all images associated with the chapter via deleteImages
 //and removes the chapter and its contents from the database
-router.delete('/deleteChapter',
+router.post('/deleteChapter',
     tokens.authorize,
     validators.requiredAttributes(['chapterID']),
     validators.canModifyComic,
@@ -301,7 +300,7 @@ router.delete('/deleteChapter',
 
 //deletes the page's image via deleteImages and
 //removes the page from the database
-router.delete('/deletePage',
+router.post('/deletePage',
     tokens.authorize,
     validators.requiredAttributes(['pageID']),
     validators.canModifyComic,
