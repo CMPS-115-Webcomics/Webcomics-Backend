@@ -28,30 +28,30 @@ const releasePages = async () => {
         if (releaseDateQuery.rowCount !== 0) {
             if (chapID === nullVal) {
                 await db.query(`
-                UPDATE Comics.Page
-                SET published = 't'
-                WHERE pageNumber = $1 AND comicID = $2 AND chapterID IS NULL`, [pageNum, comicID]);
+                    UPDATE Comics.Page
+                    SET published = 't'
+                    WHERE pageNumber = $1 AND comicID = $2 AND chapterID IS NULL`, [pageNum, comicID]);
             } else {
                 await db.query(`
-            UPDATE Comics.Page
-            SET published = 't'
-            WHERE p.pageNumber = $1 AND p.comicID = $2 AND p.chapterID = $3`, [pageNum, comicID, chapID]);
+                    UPDATE Comics.Page
+                    SET published = 't'
+                    WHERE p.pageNumber = $1 AND p.comicID = $2 AND p.chapterID = $3`, [pageNum, comicID, chapID]);
 
                 const volumeIDQuery = await db.query(`
-            UPDATE Comics.Chapter
-            SET published = 't'
-            WHERE published = 'f' AND chapterID = $1
-            RETURNING volumeID`, [chapID]);
+                    UPDATE Comics.Chapter
+                    SET published = 't'
+                    WHERE published = 'f' AND chapterID = $1
+                    RETURNING volumeID`, [chapID]);
 
                 await db.query(`
-            UPDATE Comics.Volume
-            SET published = 't'
-            WHERE published = 'f' AND volumeID = $1`, [volumeIDQuery.rows[0].volumeID]);
+                    UPDATE Comics.Volume
+                    SET published = 't'
+                    WHERE published = 'f' AND volumeID = $1`, [volumeIDQuery.rows[0].volumeID]);
             }
             await db.query(`
-        UPDATE Comics.Comic
-        SET published = 't'
-        WHERE published = 'f' AND comicID = $1`, [comicID]);
+                UPDATE Comics.Comic
+                SET published = 't'
+                WHERE published = 'f' AND comicID = $1`, [comicID]);
         }
     }
 };
@@ -66,5 +66,4 @@ rule.minute = 1;
 schedule.scheduleJob(rule, async () => {
     console.log('Checking Release Schedule');
     releasePages();
-
 });
