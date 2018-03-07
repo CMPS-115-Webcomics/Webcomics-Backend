@@ -2,7 +2,9 @@
 
 const express = require('express');
 const router = express.Router();
-const { db } = require('../db');
+const {
+    db
+} = require('../db');
 const validators = require('./validators');
 const upload = require('../upload');
 const tokens = require('../tokens');
@@ -64,7 +66,8 @@ router.get('/get/:comicURL', async (req, res, next) => {
         comic.pages = (await db.query(`SELECT *
             FROM Comics.Page
             WHERE comicID = $1
-            ORDER BY pageNumber`, [comicID])).rows;
+            ORDER BY pageNumber`, [comicID]))
+            .rows;
 
         res.json(comic);
     } catch (err) {
@@ -81,9 +84,9 @@ router.post('/create',
     upload.multer.single('thumbnail'),
     validators.requiredAttributes(['title', 'comicURL', 'tagline', 'description']),
     upload.resizeTo(375, 253),
-    upload.sendUploadToGCS,
+    upload.sendUploadToGCS(false),
     async (req, res, next) => {
-        if (!req.file || !req.file.cloudStoragePublicUrl) {
+        if (!req.file || !req.file.fileKey) {
             res.status(400).send('No image uploaded');
             return;
         }
@@ -97,7 +100,7 @@ router.post('/create',
                 req.user.accountID,
                 req.body.title,
                 req.body.comicURL,
-                req.file.cloudStoragePublicUrl,
+                req.file.fileKey,
                 req.body.tagline,
                 req.body.description
             ]);
@@ -169,9 +172,9 @@ router.post(
     upload.multer.single('file'),
     validators.requiredAttributes(['comicID', 'pageNumber']),
     validators.canModifyComic,
-    upload.sendUploadToGCS,
+    upload.sendUploadToGCS(true),
     async (req, res, next) => {
-        if (!req.file || !req.file.cloudStoragePublicUrl) {
+        if (!req.file || !req.file.fileKey) {
             res.status(400).send('No image uploaded');
             return;
         }
@@ -184,7 +187,7 @@ router.post(
                 req.body.comicID,
                 req.body.altText || null,
                 req.body.chapterID === 'null' ? null : req.body.chapterID,
-                req.file.cloudStoragePublicUrl
+                req.file.fileKey
             ]);
 
             res.status(201).json();

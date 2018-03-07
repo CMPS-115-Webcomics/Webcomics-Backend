@@ -17,10 +17,6 @@ const multer = Multer({
     }
 });
 
-const getPublicUrl = filename => {
-    return `https://storage.googleapis.com/${config.cloudBucket}/${filename}`;
-};
-
 const resizeTo = (width, height) => async (req, res, next) => {
     if (!req.file) {
         next();
@@ -40,35 +36,114 @@ const resizeTo = (width, height) => async (req, res, next) => {
     }
 };
 
-const sendUploadToGCS = (req, res, next) => {
-    if (!req.file) {
-        next();
-        return;
-    }
+/**
+ * Downscales an image to fit within a max x max size.
+ * This will never upsize the image.
+ *
+ * @param {number} max The size to downscale to
+ * @param {Buffer} buffer Buffer containing image data
+ * @returns {Buffer} downscaled image data
+ */
+const downsize = (max, buffer) =>
+    sharp(buffer)
+    .resize(max, max)
+    .max()
+    .withoutEnlargement()
+    .toBuffer();
 
-    const gcsname = Date.now() + req.file.originalname;
-    const file = bucket.file(gcsname);
+/**
+ * Transcodes an image intp wepb format
+ *
+ * @param {Buffer} buffer Image data to transcode
+ * @return {Buffer} Webp image data
+ */
+const transcode = buffer =>
+    sharp(buffer)
+    .toFormat(sharp.format.webp)
+    .toBuffer();
 
+const mimtypes = {
+    png: 'image/png',
+    jpeg: 'image/jpeg',
+    webp: 'image/webp'
+};
+
+/**
+ * Uploads a file to GCS
+ *
+ * @param {string} name The name of the file
+ * @param {string} ext The file's extension
+ * @param {Buffer} buffer  The file's data
+ *
+ * @returns {void}
+ */
+const uploadFile = (name, ext, buffer) => {
+    const file = bucket.file(name);
     const stream = file.createWriteStream({
         metadata: {
-            contentType: req.file.mimetype
+            mimetype: mimtypes[ext]
         }
     });
 
-    stream.on('error', err => {
-        req.file.cloudStorageError = err;
-        next(err);
-    });
-
-    stream.on('finish', () => {
-        req.file.cloudStorageObject = gcsname;
-        file.makePublic().then(() => {
-            req.file.cloudStoragePublicUrl = getPublicUrl(gcsname);
-            next();
+    return new Promise((resolve, reject) => {
+        stream.on('error', err => {
+            reject(err);
         });
-    });
 
-    stream.end(req.file.buffer);
+        stream.on('finish', () => {
+            file.makePublic().then(() => {
+                resolve();
+            });
+        });
+
+        stream.end(buffer);
+    });
+};
+
+const sizes = {
+    small: 720,
+    medium: 1280,
+    high: 3840
+};
+
+const getName = originalName => {
+    return {
+        key: Date.now() + originalName.replace(/\.[^/.]+$/, ''),
+        ext: originalName.split('.').pop()
+    };
+};
+
+/**
+ * Geneartes a middleware that will upload a submited image to Google Cloud Storage
+ *
+ * @param {boolean} multires True if the middleware should upload multiple resolutions of the image
+ * @returns {function(Request, Response, NextFunction): void} Upload middleware
+ */
+const sendUploadToGCS = multires => async (req, res, next) => {
+    if (!req.file) {
+        return next();
+    }
+
+    try {
+        const name = getName(req.file.originalname);
+        req.file.fileKey = `${name.key}.${name.ext}`;
+
+        if (multires) {
+            for (const sizename in sizes) {
+                const resized = await downsize(sizes[sizename], req.file.buffer);
+                const transcoded = await transcode(resized);
+                await uploadFile(`${name.key}-${sizename}.${name.ext}`, name.ext, resized);
+                await uploadFile(`${name.key}-${sizename}.webp`, 'webp', transcoded);
+            }
+        } else {
+            await uploadFile(`${name.key}.${name.ext}`, name.ext, req.file.buffer);
+            await uploadFile(`${name.key}.webp`, 'webp', await transcode(req.file.buffer));
+        }
+
+        return next();
+    } catch (err) {
+        return next(err);
+    }
 };
 
 const deleteFromGCS = filename => {
@@ -84,9 +159,9 @@ const deleteFromGCS = filename => {
 };
 
 module.exports = {
-    getPublicUrl,
     sendUploadToGCS,
     deleteFromGCS,
     resizeTo,
+    downsize,
     multer
 };
