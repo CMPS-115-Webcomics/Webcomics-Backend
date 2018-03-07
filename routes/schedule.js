@@ -2,31 +2,33 @@
 
 const express = require('express');
 const router = express.Router();
-const { db } = require('../models/db');
+const {
+    db
+} = require('../models/db');
 const validators = require('./validators');
 const tokens = require('../tokens');
 
 // allows a user to view their personal release schedule
 router.get('/mySchedule', tokens.authorize, async (req, res, next) => {
-    try{
+    try {
         const schedQuery = await db.query(`
             SELECT s.comicID, s.updateDay, s.updateType, s.updateWeek
-            FROM Comics.Schedule s, Comics.Comic c
-            WHERE c.AccountID = $1 AND c.comicID = s.comicID`, [req.user.accountID]);
+            FROM Comics.Schedule s
+            WHERE s.comicID = (SELECT c.comicID FROM Comics.comic c WHERE c.AccountID = $1)`, [req.user.accountID]);
         res.json(schedQuery.rows);
-    }catch(err){
+    } catch (err) {
         next(err);
         return;
     }
 });
 
 // allows a user to edit their own release schedule
-router.put('/editSchedule', 
-    tokens.authorize, 
+router.put('/editSchedule',
+    tokens.authorize,
     validators.requiredAttributes(['comicID', 'updateDay']),
     validators.canModifyComic,
     async (req, res, next) => {
-        try{
+        try {
             await db.query(`
                 INSERT INTO Comics.Schedule (comicID, updateDay, updateType, updateWeek)
                 VALUES($1, $2, $3, $4)
@@ -36,9 +38,9 @@ router.put('/editSchedule',
                 req.body.updateType,
                 req.body.updateWeek || null
             ]);
-        }catch(err){
+        } catch (err) {
             next(err);
-            return;    
+            return;
         }
     }
 );

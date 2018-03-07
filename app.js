@@ -12,6 +12,7 @@ const auth = require('./routes/auth');
 const comic = require('./routes/comic');
 const message = require('./routes/message');
 const availability = require('./routes/availability');
+require('./models/schedule-checker');
 
 const app = express();
 
