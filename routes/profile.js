@@ -6,9 +6,9 @@ const { db } = require('../models/db');
 const validators = require('./validators');
 const tokens = require('../tokens');
 
-//allows a user to view any person's enabled profile
+// allows a user to view any person's enabled profile
 router.get('/profiles/:profileURL', async (req, res, next) => {
-    try{
+    try {
 
         const userInfoQuery = db.query(`
             SELECT username, biography, joined
@@ -16,11 +16,11 @@ router.get('/profiles/:profileURL', async (req, res, next) => {
             WHERE profileURL = $1
         `, [req.params.profileURL]);
 
-        if(userInfoQuery.rowCount === 0){
+        if (userInfoQuery.rowCount === 0) {
             res.status(400).send(`No profile with url${ req.params.profileURL}`);
             return;
         }
-        
+
         const ownedComicsQuery = db.query(`
             SELECT c.ComicID, c.title, c.comicURL, c.description, c.thumbnailURL
             FROM Comics.Comic c
@@ -28,19 +28,19 @@ router.get('/profiles/:profileURL', async (req, res, next) => {
         `, [req.params.profileURL]);
 
         res.json({user: userInfoQuery.rows, comics: ownedComicsQuery.rows});
-    
-    }catch(err){
+
+    } catch (err) {
         next(err);
         return;
     }
 
 });
 
-router.put('/enableProfile', 
-    tokens.authorize, 
+router.put('/enableProfile',
+    tokens.authorize,
     validators.requiredAttributes(['profileURL']),
     async (req, res, next) => {
-        try{
+        try {
             await db.query(`
                 UPDATE Comics.Account
                 SET profileURL = $1, biography = $2
@@ -50,18 +50,19 @@ router.put('/enableProfile',
                     req.user.accountID
                 ]
             );
-        }catch(err){
+            res.sendStatus(200);
+        } catch (err) {
             next(err);
             return;
         }
     }
 );
 
-router.put('/editProfile', 
-    tokens.authorize, 
+router.put('/editProfile',
+    tokens.authorize,
     validators.requiredAttributes(['username']),
     async (req, res, next) => {
-        try{
+        try {
             await db.query(`
                 UPDATE Comics.Account
                 SET username = $1, biography = $2
@@ -70,9 +71,12 @@ router.put('/editProfile',
                 req.body.biography || null,
                 req.user.accountID]
             );
-        }catch(err){
+            res.sendStatus(200);
+        } catch (err) {
             next(err);
             return;
         }
     }
 );
+
+module.exports = router;

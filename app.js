@@ -10,6 +10,8 @@ const users = require('./models/users');
 const index = require('./routes/index');
 const auth = require('./routes/auth');
 const comic = require('./routes/comic');
+const schedule = require('./routes/schedule');
+const profile = require('./routes/profile');
 const message = require('./routes/message');
 const availability = require('./routes/availability');
 require('./models/schedule-checker');
@@ -50,6 +52,8 @@ app.use(bodyParser.urlencoded({
 app.use('/', index);
 app.use('/api/auth', auth);
 app.use('/api/comics', comic);
+app.use('/api/schedule', schedule);
+app.use('/api/profile', profile);
 app.use('/api/messages', message);
 app.use('/api/availability', availability);
 

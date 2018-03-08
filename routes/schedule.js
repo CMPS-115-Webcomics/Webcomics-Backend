@@ -23,7 +23,7 @@ router.get('/mySchedule', tokens.authorize, async (req, res, next) => {
 });
 
 // allows a user to edit their own release schedule
-router.post('/editSchedule',
+router.put('/editSchedule',
     tokens.authorize,
     validators.requiredAttributes(['comicID', 'updateDay']),
     validators.canModifyComic,
@@ -44,3 +44,6 @@ router.post('/editSchedule',
         }
     }
 );
+
+module.exports = router;
+
