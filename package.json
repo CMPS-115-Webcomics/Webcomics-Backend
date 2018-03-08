@@ -9,11 +9,9 @@
   },
   "dependencies": {
     "@sendgrid/mail": "^6.2.1",
-    "async": "^2.6.0",
     "body-parser": "~1.18.2",
     "cors": "^2.8.4",
-    "debug": "~2.6.9",
-    "express": "~4.15.5",
+    "express": "~4.16.2",
     "google-cloud": "^0.57.0",
     "jsonwebtoken": "^8.1.1",
     "make-promises-safe": "^1.1.0",
