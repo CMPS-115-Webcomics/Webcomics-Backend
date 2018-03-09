@@ -335,4 +335,63 @@ router.post('/deletePage',
     }
 );
 
+//making a route to updating the comic 
+router.put('/updateComic',
+    tokens.authorize,
+    validators.requiredAttributes(['comicID', 'title', 'description', 'tagline', 'published']),
+    validators.canModifyComic,
+    async (req, res, next) => {
+        try {
+            await db.query(`
+                UPDATE Comics.Comic
+                SET title       = $1,
+                    description = $2,
+                    published   = $3,
+                    tagline     = $4
+                WHERE 
+                    comicID     = $5
+                    `, [ 
+                    req.body.title,
+                    req.body.description,
+                    req.body.published,
+                    req.body.tagline,
+                    req.body.comicID
+                ]);
+            return res.sendStatus(200);
+        } catch (err) {
+            next(err);
+            return;
+        }
+    }
+);
+
+router.put('/updateThumbnail',
+    tokens.authorize,
+    upload.multer.single('thumbnail'),
+    validators.requiredAttributes(['comicID']),
+    validators.canModifyComic,
+    upload.resizeTo(375, 253),
+    upload.sendUploadToGCS(false),
+    async (req, res, next) => {
+        if (!req.file || !req.file.fileKey) {
+            res.status(400).send('No image uploaded');
+            return;
+        }
+        try {
+            await db.query(`
+                UPDATE Comics.Comic
+                SET thumbnailURL = $1
+                WHERE comicID    = $2`,[
+                req.file.fileKey,
+                req.body.comicID
+            ]);
+            res.sendStatus(200);
+        } catch (err) {
+            next(err);
+            return;
+        }
+    }
+);
+
+
 module.exports = router;
