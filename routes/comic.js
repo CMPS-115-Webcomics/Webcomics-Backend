@@ -2,7 +2,9 @@
 
 const express = require('express');
 const router = express.Router();
-const { db } = require('../models/db');
+const {
+    db
+} = require('../models/db');
 const validators = require('./validators');
 const upload = require('../upload');
 const tokens = require('../tokens');
@@ -43,7 +45,7 @@ router.get('/get/:comicURL', async (req, res, next) => {
         const comicQuery = await db.query('SELECT * FROM Comics.Comic WHERE comicURL = $1', [req.params.comicURL]);
 
         if (comicQuery.rowCount === 0) {
-            res.status(400).send(`No comic with url${ req.params.comicURL}`);
+            res.status(400).send(`No comic with url ${req.params.comicURL}`);
             return;
         }
 
@@ -72,7 +74,8 @@ router.get('/get/:comicURL', async (req, res, next) => {
         comic.owner = (await db.query(`
             SELECT a.username, a.profileURL
             FROM Comics.Account a
-            WHERE a.accountID = (SELECT c.accountID FROM Comics.Comic c WHERE c.comicID = $1)`, [comicID])).rows;
+            WHERE a.accountID = $1`, [comic.accountid]))
+            .rows[0];
 
         res.json(comic);
     } catch (err) {
