@@ -60,15 +60,15 @@ router.put('/enableProfile',
             await db.query(`
                 UPDATE Comics.Account
                 SET profileURL = $1
-                WHERE accountID = $2`, [
+                WHERE accountID = $2
+                  AND profileURL is NULL`, [
                     req.body.profileURL,
                     req.user.accountID
                 ]
             );
-            res.sendStatus(200);
+            return res.sendStatus(200);
         } catch (err) {
-            next(err);
-            return;
+            return next(err);
         }
     }
 );
@@ -80,7 +80,7 @@ router.put('/updateEmail',
         try {
             await db.query(`
                 UPDATE Comics.Account
-                SET username = $1, emailVerified = false
+                SET email = $1, emailVerified = false
                 WHERE accountID = $2`, [
                 req.body.email,
                 req.user.accountID]
