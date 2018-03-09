@@ -53,5 +53,6 @@ router.get('/email/:email', checkAvalibility('Account', 'email', true));
 router.get('/username/:username', checkAvalibility('Account', 'username', true));
 router.get('/title/:title', checkAvalibility('Comic', 'title'));
 router.get('/comicURL/:comicURL', checkAvalibility('Comic', 'comicURL'));
+router.get('/profileURL/:profileURL', checkAvalibility('Account', 'profileURL'));
 
 module.exports = router;
