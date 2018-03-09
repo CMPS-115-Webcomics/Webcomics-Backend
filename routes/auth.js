@@ -64,8 +64,8 @@ router.post('/requestReset', validators.requiredAttributes(['usernameOrEmail']),
         const queryResult = await db.query(`
             SELECT email, accountID 
             FROM Comics.Account 
-            WHERE username = $1
-               OR email    = $1`, [req.body.usernameOrEmail]);
+            WHERE LOWER(username) = LOWER($1)
+               OR LOWER(email) = LOWER($1)`, [req.body.usernameOrEmail]);
         if (queryResult.rowCount === 0) {
             res.status(400)
                 .json({
