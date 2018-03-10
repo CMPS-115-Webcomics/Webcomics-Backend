@@ -8,6 +8,25 @@ const tokens = require('../tokens');
 const email = require('../email');
 
 
+// return null?
+router.get('/:accountID', async (req, res, next) => {
+    try {
+        const userInfoQuery = await db.query(`
+            SELECT profileURL as url
+            FROM Comics.Account
+            WHERE accountID = $1
+        `, [req.params.accountID]);
+        res.json(userInfoQuery.rows[0]);
+    } catch (err) {
+        console.log(err);
+        next(err);
+        return;
+    }
+
+});
+
+
+
 router.get('/myProfile', tokens.authorize, async (req, res, next) => {
     try {
         const userInfoQuery = await db.query(`
