@@ -90,7 +90,7 @@ router.get('/get/:comicURL', async (req, res, next) => {
 router.post('/create',
     tokens.authorize,
     upload.multer.single('thumbnail'),
-    validators.requiredAttributes(['title', 'comicURL', 'tagline', 'description']),
+    validators.requiredAttributes(['title', 'comicURL', 'organization', 'tagline', 'description']),
     upload.resizeTo(375, 253),
     upload.sendUploadToGCS(false),
     async (req, res, next) => {
@@ -101,8 +101,8 @@ router.post('/create',
         try {
             const created = await db.query(`
                 INSERT INTO Comics.Comic 
-                (accountID, title, comicURL, thumbnailURL, tagline, description)
-                VALUES ($1, $2, $3, $4, $5, $6)
+                (accountID, title, comicURL, thumbnailURL, tagline, description, organization)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
                 RETURNING comicID;
                 `, [
                 req.user.accountID,
@@ -110,7 +110,8 @@ router.post('/create',
                 req.body.comicURL,
                 req.file.fileKey,
                 req.body.tagline,
-                req.body.description
+                req.body.description,
+                req.body.organization
             ]);
             res.status(201)
                 .json(created.rows[0]);

@@ -32,6 +32,8 @@ CREATE TABLE Comics.Message (
     FOREIGN KEY (receiverID) REFERENCES Comics.Account(accountID) ON DELETE CASCADE
 );
 
+CREATE TYPE Comics.ORGANIZATION_TYPE AS ENUM ('pages', 'chapters', 'volumes');
+
 CREATE TABLE Comics.Comic (
     comicID             SERIAL PRIMARY KEY,
     accountID           INTEGER NOT NULL,
@@ -41,6 +43,7 @@ CREATE TABLE Comics.Comic (
     published           BOOLEAN DEFAULT false NOT NULL,
     tagline             VARCHAR(30) NOT NULL,
     description         VARCHAR(1000) NOT NULL,
+    organization        Comics.ORGANIZATION_TYPE DEFAULT 'chapters' NOT NULL,
     created             DATE DEFAULT CURRENT_DATE NOT NULL,
     updated             DATE DEFAULT CURRENT_DATE NOT NULL,
     FOREIGN KEY (accountID) REFERENCES Comics.Account(accountID) ON DELETE CASCADE
