@@ -43,7 +43,7 @@ router.get('/profiles/:profileURL', async (req, res, next) => {
             WHERE c.accountID = (SELECT a.accountID FROM Comics.Account a WHERE a.profileURL = $1)
         `, [req.params.profileURL]);
 
-        res.json({user: userInfoQuery.rows, comics: ownedComicsQuery.rows});
+        res.json({user: userInfoQuery.rows[0], comics: ownedComicsQuery.rows});
 
     } catch (err) {
         next(err);
