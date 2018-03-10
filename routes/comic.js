@@ -335,7 +335,7 @@ router.post('/deletePage',
     }
 );
 
-//making a route to updating the comic 
+//making a route to updating the comic
 router.put('/updateComic',
     tokens.authorize,
     validators.requiredAttributes(['comicID', 'title', 'description', 'tagline', 'published']),
@@ -350,14 +350,14 @@ router.put('/updateComic',
                     tagline     = $4
                 WHERE 
                     comicID     = $5
-                    `, [ 
+                    `, [
                     req.body.title,
                     req.body.description,
                     req.body.published,
                     req.body.tagline,
                     req.body.comicID
                 ]);
-            return res.sendStatus(200);
+            res.sendStatus(200);
         } catch (err) {
             next(err);
             return;
@@ -381,7 +381,7 @@ router.put('/updateThumbnail',
             await db.query(`
                 UPDATE Comics.Comic
                 SET thumbnailURL = $1
-                WHERE comicID    = $2`,[
+                WHERE comicID    = $2`, [
                 req.file.fileKey,
                 req.body.comicID
             ]);
