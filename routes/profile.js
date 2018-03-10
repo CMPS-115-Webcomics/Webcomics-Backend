@@ -27,7 +27,7 @@ router.get('/myProfile', tokens.authorize, async (req, res, next) => {
 router.get('/profiles/:profileURL', async (req, res, next) => {
     try {
         const userInfoQuery = await db.query(`
-            SELECT username, biography, joined
+            SELECT username, biography, email, joined
             FROM Comics.Account 
             WHERE profileURL = $1
         `, [req.params.profileURL]);
