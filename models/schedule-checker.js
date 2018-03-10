@@ -22,11 +22,9 @@ const releasePages = async () => {
             SELECT updateDay
             FROM Comics.schedule
             WHERE comicID = $1 
-              AND updateDay = TO_NUMBER(TO_CHAR(CURRENT_TIMESTAMP, 'D'),'99')
+              AND updateDay = TO_NUMBER(TO_CHAR(CURRENT_TIMESTAMP, 'D'), '99')
               AND (sched.updateType = 'weekly' 
-              OR sched.updateWeek = 
-                to_number(to_char(current_timestamp, 'ww'), '99')  -
-                to_number(to_char(date_trunc('month',CURRENT_TIMESTAMP), 'WW'), '99') + 1)
+              OR sched.updateWeek = TO_NUMBER(TO_CHAR(CURRENT_TIMESTAMP, 'W'), '99')
         `, [comicID]);
 
         if (releaseDateQuery.rowCount !== 0) {
