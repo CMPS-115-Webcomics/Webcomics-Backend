@@ -6,7 +6,7 @@ const { db } = require('../models/db');
  * Users can modify comics if they are that comics owner or if they have moderator privillages.
  *
  * @param {Request} req Express request
- * @param {Response} res Express responce
+ * @param {Response} res Express response
  * @param {NextFunction} next Next function
  * @returns {void}
  */
@@ -37,7 +37,7 @@ const canModifyComic = async (req, res, next) => {
  * Both moderators and admins have moderator privliages
  *
  * @param {Request} req Express request
- * @param {Response} res Express responce
+ * @param {Response} res Express response
  * @param {NextFunction} next Next function
  * @returns {void}
  */

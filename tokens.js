@@ -68,7 +68,7 @@ const createPasswordResetToken = accountID => {
  * Finally, if the user is banned, the request will be rejected with a 403
  *
  * @param {Request} req Express Request
- * @param {Responce} res Express Responce
+ * @param {Response} res Express Response
  * @param {NextFunction} next Express NextFunction
  * @returns {void}
  */

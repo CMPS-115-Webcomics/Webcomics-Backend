@@ -16,7 +16,7 @@ const config = require('../config');
  * @param {string} username Name of th user
  * @returns {{token: string, role:string, username:string}} a
  */
-const authResponce = (accountID, role, username) => {
+const authResponse = (accountID, role, username) => {
     return {
         token: tokens.createUserToken(accountID, role),
         username,
@@ -56,7 +56,7 @@ const create = async (userdata, role, shouldVerifyEmail) => {
     if (shouldVerifyEmail) {
         email.sendVerificationEmail(userEmail, result.accountid);
     }
-    return authResponce(result.accountid, result.role, userdata.username);
+    return authResponse(result.accountid, result.role, userdata.username);
 };
 
 /**

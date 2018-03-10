@@ -18,7 +18,7 @@ const router = express.Router();
  * @param {string} username Name of the user
  * @returns {{token: string, role:string, username:string}}} a
  */
-const authResponce = (accountID, role, username) => {
+const authResponse = (accountID, role, username) => {
     return {
         token: tokens.createUserToken(accountID, role),
         username,
@@ -52,7 +52,7 @@ router.post('/verifyReset', tokens.authorize, validators.requiredAttributes(['pa
         ]);
         const targetUser = queryResult.rows[0];
         res.status(200)
-            .json(authResponce(targetUser.accountid, targetUser.role, targetUser.username));
+            .json(authResponse(targetUser.accountid, targetUser.role, targetUser.username));
     } catch (err) {
         next(err);
         return;
@@ -115,7 +115,7 @@ router.post('/login', validators.requiredAttributes(['usernameOrEmail', 'passwor
         }
         if (await passwords.checkPassword(req.body.password, targetUser.password, targetUser.salt)) {
             res.status(200)
-                .json(authResponce(targetUser.accountid, targetUser.role, targetUser.username));
+                .json(authResponse(targetUser.accountid, targetUser.role, targetUser.username));
             return;
         }
         res.status(403).send('Password Incorrect');
