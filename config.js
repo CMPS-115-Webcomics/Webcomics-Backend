@@ -15,8 +15,8 @@ const config = {
     },
     admin: {
         name: json.ADMIN_NAME || process.env.ADMIN_NAME || 'admin',
-        password: json.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD,
-        email: json.ADMIN_EMAIL || process.env.ADMIN_EMAIL
+        password: json.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || 'password',
+        email: json.ADMIN_EMAIL || process.env.ADMIN_EMAIL || 'admin@comichub.io'
     },
     instanceConnecitonName: json.INSTANCE_CONNECTION_NAME || process.env.INSTANCE_CONNECTION_NAME,
     enviroment: process.env.NODE_ENV,
