@@ -8,6 +8,7 @@ const {
 const validators = require('./validators');
 const upload = require('../upload');
 const tokens = require('../tokens');
+const comicModel = require('../models/comic.model');
 
 /*Get a list of all comics. */
 router.get('/comics', async (req, res, next) => {
@@ -99,22 +100,17 @@ router.post('/create',
             return;
         }
         try {
-            const created = await db.query(`
-                INSERT INTO Comics.Comic 
-                (accountID, title, comicURL, thumbnailURL, tagline, description, organization)
-                VALUES ($1, $2, $3, $4, $5, $6, $7)
-                RETURNING comicID;
-                `, [
-                req.user.accountID,
-                req.body.title,
-                req.body.comicURL,
-                req.file.fileKey,
-                req.body.tagline,
-                req.body.description,
-                req.body.organization
-            ]);
+            const comicData = await comicModel.createComic({
+                accountID: req.user.accountID,
+                title: req.body.title,
+                comicURL: req.body.comicURL,
+                fileKey: req.file.fileKey,
+                tagline: req.body.tagline,
+                description: req.body.description,
+                organization: req.body.organization
+            });
             res.status(201)
-                .json(created.rows[0]);
+                .json(comicData);
         } catch (err) {
             next(err);
             return;
@@ -129,17 +125,13 @@ router.post('/addVolume',
     validators.canModifyComic,
     async (req, res, next) => {
         try {
-            const created = await db.query(`
-                INSERT INTO Comics.Volume 
-                (name, comicID, volumeNumber)
-                VALUES ($1, $2, $3)
-                RETURNING volumeID`, [
-                req.body.name || null,
+            const volumeData = comicModel.addVolume(
                 req.body.comicID,
+                req.body.name || null,
                 req.body.volumeNumber
-            ]);
+            );
             res.status(201)
-                .json(created.rows[0]);
+                .json(volumeData);
         } catch (err) {
             next(err);
             return;
@@ -154,19 +146,14 @@ router.post('/addChapter',
     validators.canModifyComic,
     async (req, res, next) => {
         try {
-            const chapterInsertion = await db.query(`
-                INSERT INTO Comics.Chapter 
-                (volumeID, name, comicID, chapterNumber)
-                VALUES ($1, $2, $3, $4)
-                RETURNING chapterID;`, [
-                req.body.volumeID === 'null' ? null : req.body.volumeID,
-                req.body.name || null,
+            const chapterData = comicModel.addChapter(
                 req.body.comicID,
+                req.body.name || null,
+                req.body.volumeID === 'null' ? null : req.body.volumeID,
                 req.body.chapterNumber
-            ]);
-
+            );
             res.status(201)
-                .json(chapterInsertion.rows[0]);
+                .json(chapterData);
         } catch (err) {
             next(err);
             return;
@@ -352,12 +339,12 @@ router.put('/updateComic',
                 WHERE 
                     comicID     = $5
                     `, [
-                    req.body.title,
-                    req.body.description,
-                    req.body.published,
-                    req.body.tagline,
-                    req.body.comicID
-                ]);
+                req.body.title,
+                req.body.description,
+                req.body.published,
+                req.body.tagline,
+                req.body.comicID
+            ]);
             res.sendStatus(200);
         } catch (err) {
             next(err);
