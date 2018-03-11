@@ -99,7 +99,7 @@ const getPublishedComic = async comicURL => {
         if (comicQuery.rowCount === 0) {
             return -1;
         }
-        return await getComicInfo(comicQuery.rows[0]);
+        return (await getComicInfo(comicQuery.rows[0]));
     } catch (err) {
         throw err;
     }
@@ -122,7 +122,7 @@ const getOwnedComic = async comicURL => {
         if (comicQuery.rowCount === 0) {
             return -1;
         }
-        return await getComicInfo(comicQuery.rows[0]);
+        return (await getComicInfo(comicQuery.rows[0]));
     } catch (err) {
         throw err;
     }
@@ -144,7 +144,8 @@ const addPage = async (pageNumber, comicID, altText, chapterID, fileKey) => {
         await db.query(`
             INSERT INTO Comics.Page 
             (pageNumber, comicID, altText, chapterID, imgUrl)
-            VALUES ($1, $2, $3, $4, $5)`, [pageNumber, comicID, altText, chapterID, fileKey]
+            VALUES ($1, $2, $3, $4, $5)
+            `, [pageNumber, comicID, altText, chapterID, fileKey]
         );
     } catch (err) {
         throw err;
@@ -473,7 +474,7 @@ const updateThumbnail = async (comicID, fileKey) => {
     try {
         const urlQuery = await db.query(`
             SELECT thumbnailURL 
-            FROM Comics.Comics
+            FROM Comics.Comic
             WHERE comicID = $1
         `, [comicID]);
 

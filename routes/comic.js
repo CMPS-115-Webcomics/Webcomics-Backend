@@ -10,7 +10,7 @@ const comicModel = require('../models/comic.model');
 /*Get a list of all comics. */
 router.get('/comics', async (req, res, next) => {
     try {
-        const result = await comicModel.getAllComics;
+        const result = await comicModel.getAllComics();
         res.json(result);
     } catch (err) {
         next(err);
@@ -35,8 +35,10 @@ router.get('/myComics', tokens.authorize, async (req, res, next) => {
 router.get('/get/:comicURL', tokens.optionalAuthorize, async (req, res, next) => {
     try {
         const comicURL = req.params.comicURL;
-        const comic = (typeof req.user !== 'undefined' ?
+
+        const comic = await (!req.user ?
             comicModel.getOwnedComic(comicURL) : comicModel.getPublishedComic(comicURL));
+
         if (comic === -1) {
             res.status(400).send(`No comic with url ${comicURL}`);
             return;
@@ -48,37 +50,6 @@ router.get('/get/:comicURL', tokens.optionalAuthorize, async (req, res, next) =>
     }
 
 });
-
-//Generate a new comic and add it to the database
-router.post('/create',
-    tokens.authorize,
-    upload.multer.single('thumbnail'),
-    validators.requiredAttributes(['title', 'comicURL', 'organization', 'tagline', 'description']),
-    upload.resizeTo(375, 253),
-    upload.sendUploadToGCS(false),
-    async (req, res, next) => {
-        if (!req.file || !req.file.fileKey) {
-            res.status(400).send('No image uploaded');
-            return;
-        }
-        try {
-            const comicData = await comicModel.createComic({
-                accountID: req.user.accountID,
-                title: req.body.title,
-                comicURL: req.body.comicURL,
-                fileKey: req.file.fileKey,
-                tagline: req.body.tagline,
-                description: req.body.description,
-                organization: req.body.organization
-            });
-            res.status(201)
-                .json(comicData);
-        } catch (err) {
-            next(err);
-            return;
-        }
-    }
-);
 
 //adds a new page for a given comic to the database
 router.post(
@@ -145,6 +116,37 @@ router.post('/addVolume',
             );
             res.status(201)
                 .json(volumeData);
+        } catch (err) {
+            next(err);
+            return;
+        }
+    }
+);
+
+//Generate a new comic and add it to the database
+router.post('/create',
+    tokens.authorize,
+    upload.multer.single('thumbnail'),
+    validators.requiredAttributes(['title', 'comicURL', 'organization', 'tagline', 'description']),
+    upload.resizeTo(375, 253),
+    upload.sendUploadToGCS(false),
+    async (req, res, next) => {
+        if (!req.file || !req.file.fileKey) {
+            res.status(400).send('No image uploaded');
+            return;
+        }
+        try {
+            const comicData = await comicModel.createComic({
+                accountID: req.user.accountID,
+                title: req.body.title,
+                comicURL: req.body.comicURL,
+                fileKey: req.file.fileKey,
+                tagline: req.body.tagline,
+                description: req.body.description,
+                organization: req.body.organization
+            });
+            res.status(201)
+                .json(comicData);
         } catch (err) {
             next(err);
             return;
@@ -230,11 +232,11 @@ router.put('/updateComic',
     async (req, res, next) => {
         try {
             await comicModel.updateComic(
+                req.body.comicID,
                 req.body.title,
                 req.body.description,
-                req.body.published,
                 req.body.tagline,
-                req.body.comicID
+                req.body.published
             );
             res.sendStatus(200);
         } catch (err) {
@@ -257,7 +259,7 @@ router.put('/updateThumbnail',
             return;
         }
         try {
-            await comicModel.updateThumbnail(req.file.fileKey, req.body.comicID);
+            await comicModel.updateThumbnail(req.body.comicID, req.file.fileKey);
             res.sendStatus(200);
         } catch (err) {
             next(err);
@@ -272,7 +274,7 @@ router.put('/movePage',
     validators.canModifyComic,
     async (req, res, next) => {
         try {
-            comicModel.movePage(
+            await comicModel.movePage(
                 req.body.pageID,
                 req.body.chapterID
             );
@@ -290,7 +292,7 @@ router.put('/moveChapter',
     validators.canModifyComic,
     async (req, res, next) => {
         try {
-            comicModel.moveChapter(
+            await comicModel.moveChapter(
                 req.body.chapterID,
                 req.body.volumeID
             );

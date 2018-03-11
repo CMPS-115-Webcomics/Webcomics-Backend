@@ -87,6 +87,12 @@ router.post('/requestReset', validators.requiredAttributes(['usernameOrEmail']),
 
 router.post('/register', validators.requiredAttributes(['username', 'email', 'password']), async (req, res, next) => {
     try {
+        if (req.body.password.length < 8) {
+            res.status(400).json({
+                message: 'password too short'
+            });
+            return;
+        }
         const authData = await users.create(req.body, 'user');
         res.status(201)
             .json(authData);

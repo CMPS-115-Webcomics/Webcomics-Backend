@@ -11,7 +11,7 @@ CREATE TABLE Comics.Account (
     banned              BOOLEAN DEFAULT false NOT NULL,
     biography           VARCHAR(5000),
     joined              DATE DEFAULT CURRENT_DATE NOT NULL,
-    password            VARCHAR(256) NOT NULL,
+    password            VARCHAR(256) NOT NULL CHECK (LENGTH(password) > 7),
     salt                VARCHAR(32) NOT NULL,
     role                Comics.USER_ROLE DEFAULT 'user' NOT NULL
 );
@@ -39,10 +39,10 @@ CREATE TABLE Comics.Comic (
     accountID           INTEGER NOT NULL,
     title               VARCHAR(50) UNIQUE NOT NULL CHECK (title <> ''),
     comicURL            VARCHAR(30) UNIQUE NOT NULL CHECK(comicURL SIMILAR TO '[-a-z0-9]+' AND comicURL <> ''),
-    thumbnailURL        VARCHAR(255) NOT NULL CHECK (thumbnail <> ''),
+    thumbnailURL        VARCHAR(255) NOT NULL CHECK (thumbnailURL <> ''),
     published           BOOLEAN DEFAULT false NOT NULL,
-    tagline             VARCHAR(30) NOT NULL CHECK (published <> ''),
-    description         VARCHAR(1000) NOT NULL,
+    tagline             VARCHAR(30) NOT NULL CHECK (tagline <> ''),
+    description         VARCHAR(1000) NOT NULL CHECK (description <> ''),
     organization        Comics.ORGANIZATION_TYPE DEFAULT 'chapters' NOT NULL,
     created             DATE DEFAULT CURRENT_DATE NOT NULL,
     updated             DATE DEFAULT CURRENT_DATE NOT NULL,
@@ -96,8 +96,8 @@ CREATE TABLE Comics.Schedule (
     updateType          Comics.RELEASE_FREQUENCY NOT NULL,
     updateWeek          INTEGER, -- Range is 1 to 4, where the first week of month is 1; uses postgresql's week def
     PRIMARY KEY (comicID, updateDay),
-    CONSTRAINT day_range CHECK (updateDay > 0 AND updateDay < 8), 
-    CONSTRAINT week_range CHECK (updateWeek > 0 AND updateWeek < 5),
+    CONSTRAINT day_range CHECK (updateDay >= 1 AND updateDay <= 7), 
+    CONSTRAINT week_range CHECK (updateWeek >= 1 AND updateWeek <= 4),
     CONSTRAINT monthly_release CHECK (updateType = 'weekly' OR (updateType = 'monthly' AND updateWeek IS NOT NULL)),
     FOREIGN KEY (comicID) REFERENCES Comics.Comic(comicID) ON DELETE CASCADE
 );
