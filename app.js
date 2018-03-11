@@ -3,7 +3,9 @@ const express = require('express');
 const logger = require('morgan');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const {startDB} = require('./models/db');
+const {
+    startDB
+} = require('./models/db');
 const users = require('./models/users');
 
 const index = require('./routes/index');
@@ -18,34 +20,34 @@ require('./models/schedule-checker');
 const app = express();
 
 const setup = async () => {
-  await startDB();
-  await users.initilize();
+    await startDB();
+    await users.initilize();
 };
 setup();
 
 const whitelist = new Set([
-  'http://localhost:4200',
-  'https://comichub.io',
-  'https://silent-thunder-192708.firebaseapp.com',
-  undefined
+    'http://localhost:4200',
+    'https://comichub.io',
+    'https://silent-thunder-192708.firebaseapp.com',
+    undefined
 ]);
 const corsOptions = {
-  origin (origin, callback) {
-    if (whitelist.has(origin)) {
-      callback(null, true);
-      return;
-    } else {
-      callback(new Error(`Origin "${origin}" not allowed by CORS`));
-      return;
+    origin(origin, callback) {
+        if (whitelist.has(origin)) {
+            callback(null, true);
+            return;
+        } else {
+            callback(new Error(`Origin "${origin}" not allowed by CORS`));
+            return;
+        }
     }
-  }
 };
 
 app.use(cors(corsOptions));
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
-  extended: false
+    extended: false
 }));
 
 app.use('/', index);
@@ -58,29 +60,29 @@ app.use('/api/availability', availability);
 
 // catch 404 and forward to error handler
 app.use((req, res, next) => {
-  const err = new Error('Not Found');
-  err.status = 404;
-  next(err);
+    const err = new Error('Not Found');
+    err.status = 404;
+    next(err);
 });
 
 // error handler
-app.use((err, req, res) => {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+app.use((err, req, res, next) => {
+    // set locals, only providing error in development
+    res.locals.message = err.message;
+    res.locals.error = req.app.get('env') === 'development' ? err : {};
 
-  console.error(err);
+    console.error(err);
 
-  if (err.constraint) {
-    res.status(400)
-      .json({
-        errorType: 'constraint-error',
-        constraint: err.constraint
-      });
-    return;
-  }
+    if (err.constraint) {
+        res.status(400)
+            .json({
+                errorType: 'constraint-error',
+                constraint: err.constraint
+            });
+        return;
+    }
 
-  res.sendStatus(err.status || 500);
+    res.sendStatus(err.status || 500);
 });
 
 module.exports = app;
