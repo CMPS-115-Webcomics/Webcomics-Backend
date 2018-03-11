@@ -16,10 +16,10 @@ const {
 const addVolume = async (comicID, name, volumeNumber) => {
     const created = await db.query(`
             INSERT INTO Comics.Volume 
-            (name, comicID, volumeNumber)
+            (comicID, name, volumeNumber)
             VALUES ($1, $2, $3)
             RETURNING volumeID`, [
-        name, comicID, volumeNumber
+        comicID, name, volumeNumber
     ]);
     return created.rows[0];
 };
@@ -37,10 +37,10 @@ const addVolume = async (comicID, name, volumeNumber) => {
 const addChapter = async (comicID, name, volumeID, chapterNumber) => {
     const chapterInsertion = await db.query(`
                 INSERT INTO Comics.Chapter 
-                (volumeID, name, comicID, chapterNumber)
+                (comicID, name, volumeID, chapterNumber)
                 VALUES ($1, $2, $3, $4)
                 RETURNING chapterID;`, [
-        volumeID, name, comicID, chapterNumber
+        comicID, name, volumeID, chapterNumber
     ]);
     return chapterInsertion.rows[0];
 };
@@ -52,27 +52,34 @@ const addChapter = async (comicID, name, volumeID, chapterNumber) => {
  * @returns {*} The resulting comic
  */
 const createComic = async comicData => {
-    const created = await db.query(`
+    try {
+        const created = await db.query(`
         INSERT INTO Comics.Comic 
         (accountID, title, comicURL, thumbnailURL, tagline, description, organization)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING comicID;
     `, [
-        comicData.accountID,
-        comicData.title,
-        comicData.comicURL,
-        comicData.fileKey,
-        comicData.tagline,
-        comicData.description,
-        comicData.organization
-    ]);
-    if (comicData.organization === 'volumes') {
-        const volumeID = await addVolume(null, comicData.comicID, 1).volumeid;
-        await addChapter(comicData.comicID, volumeID, null, 1);
-    } else if (comicData.organization === 'pages') {
-        await addChapter(comicData.comicID, null, null, 1);
+            comicData.accountID,
+            comicData.title,
+            comicData.comicURL,
+            comicData.fileKey,
+            comicData.tagline,
+            comicData.description,
+            comicData.organization
+        ]);
+
+        const newComicData = created.rows[0];
+
+        if (comicData.organization === 'volumes') {
+            const volumeID = (await addVolume(newComicData.comicid, null, 1)).volumeid;
+            await addChapter(newComicData.comicid, null, volumeID, 1);
+        } else if (comicData.organization === 'pages') {
+            await addChapter(newComicData.comicID, null, null, 1);
+        }
+        return newComicData;
+    } catch (err) {
+        throw err;
     }
-    return created.rows[0];
 };
 
 /**
