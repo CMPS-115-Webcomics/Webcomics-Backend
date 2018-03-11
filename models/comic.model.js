@@ -4,25 +4,6 @@ const {
     db
 } = require('./db');
 
-/**
- * Adds a new volume for a given comic to the database
- *
- * @param {number} comicID - The ID of the comic that owns this volume
- * @param {string | null} name - The name of this volume
- * @param {number | null} volumeNumber  -The number of this volume
- *
- * @returns {{volumeid: number}} The id of the created volume
- */
-const addVolume = async (comicID, name, volumeNumber) => {
-    const created = await db.query(`
-            INSERT INTO Comics.Volume 
-            (comicID, name, volumeNumber)
-            VALUES ($1, $2, $3)
-            RETURNING volumeID`, [
-        comicID, name, volumeNumber
-    ]);
-    return created.rows[0];
-};
 
 /**
  * Adds a new chapter for a given comic to the database
@@ -44,6 +25,32 @@ const addChapter = async (comicID, name, volumeID, chapterNumber) => {
     ]);
     return created.rows[0];
 };
+
+/**
+ * Adds a new volume for a given comic to the database
+ *
+ * @param {number} comicID - The ID of the comic that owns this volume
+ * @param {string | null} name - The name of this volume
+ * @param {number | null} volumeNumber  -The number of this volume
+ *
+ * @returns {{volumeid: number}} The id of the created volume
+ */
+const addVolume = async (comicID, name, volumeNumber) => {
+    const created = await db.query(`
+            INSERT INTO Comics.Volume 
+            (comicID, name, volumeNumber)
+            VALUES ($1, $2, $3)
+            RETURNING volumeID`, [
+        comicID, name, volumeNumber
+    ]);
+    const volumeID = created.rows[0].volumeid;
+    const chapterData = await addChapter(comicID, null, volumeID, 1);
+    return {
+        volumeID,
+        chapterID: chapterData.chapterid
+    };
+};
+
 
 /**
  * Creates a new comic based on the given data
@@ -70,8 +77,7 @@ const createComic = async comicData => {
 
         const newComicData = created.rows[0];
         if (comicData.organization === 'volumes') {
-            const volumeID = (await addVolume(newComicData.comicid, null, 1)).volumeid;
-            await addChapter(newComicData.comicid, null, volumeID, 1);
+            await addVolume(newComicData.comicid, null, 1);
         } else if (comicData.organization === 'chapters') {
             await addChapter(newComicData.comicid, null, null, 1);
         }

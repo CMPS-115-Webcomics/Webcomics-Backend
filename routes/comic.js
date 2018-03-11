@@ -124,7 +124,7 @@ router.post('/addVolume',
     validators.canModifyComic,
     async (req, res, next) => {
         try {
-            const volumeData = comicModel.addVolume(
+            const volumeData = await comicModel.addVolume(
                 req.body.comicID,
                 req.body.name || null,
                 req.body.volumeNumber
