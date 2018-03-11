@@ -8,6 +8,7 @@ const {
 const validators = require('./validators');
 const upload = require('../upload');
 const tokens = require('../tokens');
+const comicModel = require('../models/comic.model');
 
 /*Get a list of all comics. */
 router.get('/comics', async (req, res, next) => {
@@ -85,12 +86,11 @@ router.get('/get/:comicURL', async (req, res, next) => {
 
 });
 
-
 //Generate a new comic and add it to the database
 router.post('/create',
     tokens.authorize,
     upload.multer.single('thumbnail'),
-    validators.requiredAttributes(['title', 'comicURL', 'tagline', 'description']),
+    validators.requiredAttributes(['title', 'comicURL', 'organization', 'tagline', 'description']),
     upload.resizeTo(375, 253),
     upload.sendUploadToGCS(false),
     async (req, res, next) => {
@@ -99,21 +99,17 @@ router.post('/create',
             return;
         }
         try {
-            const created = await db.query(`
-                INSERT INTO Comics.Comic 
-                (accountID, title, comicURL, thumbnailURL, tagline, description)
-                VALUES ($1, $2, $3, $4, $5, $6)
-                RETURNING comicID;
-                `, [
-                req.user.accountID,
-                req.body.title,
-                req.body.comicURL,
-                req.file.fileKey,
-                req.body.tagline,
-                req.body.description
-            ]);
+            const comicData = await comicModel.createComic({
+                accountID: req.user.accountID,
+                title: req.body.title,
+                comicURL: req.body.comicURL,
+                fileKey: req.file.fileKey,
+                tagline: req.body.tagline,
+                description: req.body.description,
+                organization: req.body.organization
+            });
             res.status(201)
-                .json(created.rows[0]);
+                .json(comicData);
         } catch (err) {
             next(err);
             return;
@@ -128,17 +124,13 @@ router.post('/addVolume',
     validators.canModifyComic,
     async (req, res, next) => {
         try {
-            const created = await db.query(`
-                INSERT INTO Comics.Volume 
-                (name, comicID, volumeNumber)
-                VALUES ($1, $2, $3)
-                RETURNING volumeID`, [
-                req.body.name || null,
+            const volumeData = await comicModel.addVolume(
                 req.body.comicID,
+                req.body.name || null,
                 req.body.volumeNumber
-            ]);
+            );
             res.status(201)
-                .json(created.rows[0]);
+                .json(volumeData);
         } catch (err) {
             next(err);
             return;
@@ -153,19 +145,14 @@ router.post('/addChapter',
     validators.canModifyComic,
     async (req, res, next) => {
         try {
-            const chapterInsertion = await db.query(`
-                INSERT INTO Comics.Chapter 
-                (volumeID, name, comicID, chapterNumber)
-                VALUES ($1, $2, $3, $4)
-                RETURNING chapterID;`, [
-                req.body.volumeID === 'null' ? null : req.body.volumeID,
-                req.body.name || null,
+            const chapterData = await comicModel.addChapter(
                 req.body.comicID,
+                req.body.name || null,
+                req.body.volumeID === 'null' ? null : req.body.volumeID,
                 req.body.chapterNumber
-            ]);
-
+            );
             res.status(201)
-                .json(chapterInsertion.rows[0]);
+                .json(chapterData);
         } catch (err) {
             next(err);
             return;
@@ -351,12 +338,12 @@ router.put('/updateComic',
                 WHERE 
                     comicID     = $5
                     `, [
-                    req.body.title,
-                    req.body.description,
-                    req.body.published,
-                    req.body.tagline,
-                    req.body.comicID
-                ]);
+                req.body.title,
+                req.body.description,
+                req.body.published,
+                req.body.tagline,
+                req.body.comicID
+            ]);
             res.sendStatus(200);
         } catch (err) {
             next(err);
@@ -393,5 +380,40 @@ router.put('/updateThumbnail',
     }
 );
 
+router.put('/movePage',
+    tokens.authorize,
+    validators.requiredAttributes(['pageID, chapterID']),
+    validators.canModifyComic,
+    async (req, res, next) => {
+        try {
+            comicModel.movePage(
+                req.body.pageID,
+                req.body.chapterID
+            );
+            res.sendStatus(200);
+        } catch (err) {
+            next(err);
+            return;
+        }
+    }
+);
+
+router.put('/moveChapter',
+    tokens.authorize,
+    validators.requiredAttributes(['chapterID, volumeID']),
+    validators.canModifyComic,
+    async (req, res, next) => {
+        try {
+            comicModel.moveChapter(
+                req.body.chapterID,
+                req.body.volumeID
+            );
+            res.sendStatus(200);
+        } catch (err) {
+            next(err);
+            return;
+        }
+    }
+);
 
 module.exports = router;
