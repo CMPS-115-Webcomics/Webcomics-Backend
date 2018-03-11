@@ -1,0 +1,466 @@
+{
+	"info": {
+		"name": "webcomic",
+		"_postman_id": "c0e90186-61a7-444b-9c5e-9a6aa97b635e",
+		"description": "",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Create Comic",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "6adae5ba-fb79-4b74-aaf6-274a1d26b619",
+						"type": "text/javascript",
+						"exec": [
+							"var jsonData = pm.response.json();",
+							"if (jsonData.comicid)",
+							"        pm.environment.set(\"comicID\", jsonData.comicid);",
+							"",
+							"pm.test(\"Response Has Comic ID\", function () {",
+							"    pm.expect(jsonData.comicid).to.be.an('number');",
+							"});"
+						]
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "b246f26c-614d-4482-a1d5-4a7fabfa8710",
+						"type": "text/javascript",
+						"exec": [
+							"function getRandomInt(min, max) {",
+							"  min = Math.ceil(min);",
+							"  max = Math.floor(max);",
+							"  return Math.floor(Math.random() * (max - min)) + min; //The maximum is exclusive and the minimum is inclusive",
+							"}",
+							"",
+							"pm.environment.set(\"comicURL\", `url-${getRandomInt(0, 100000)}`);",
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "token",
+						"value": "{{userToken}}"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "thumbnail",
+							"description": "",
+							"type": "file"
+						},
+						{
+							"key": "title",
+							"value": "Title-{{$randomInt}}",
+							"description": "",
+							"type": "text"
+						},
+						{
+							"key": "comicURL",
+							"value": "{{comicURL}}",
+							"description": "",
+							"type": "text"
+						},
+						{
+							"key": "description",
+							"value": "{{username}}'s Comic Description",
+							"description": "",
+							"type": "text"
+						},
+						{
+							"key": "tagline",
+							"value": "{{username}}'s Comic Tag",
+							"description": "",
+							"type": "text"
+						},
+						{
+							"key": "organization",
+							"value": "chapters",
+							"description": "",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{domain}}/api/comics/create",
+					"host": [
+						"{{domain}}"
+					],
+					"path": [
+						"api",
+						"comics",
+						"create"
+					]
+				},
+				"description": null
+			},
+			"response": []
+		},
+		{
+			"name": "Modify Comic",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "token",
+						"value": "{{userToken}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"comicID\": \"{{comicID}}\",\n\t\"tagline\": \"Changed tag - {{$randomInt}}\",\n\t\"title\": \"Changed Title - {{$randomInt}}\",\n\t\"description\": \"Changed Desc - {{$randomInt}}\",\n\t\"published\": true\n}"
+				},
+				"url": {
+					"raw": "{{domain}}/api/comics/updateComic",
+					"host": [
+						"{{domain}}"
+					],
+					"path": [
+						"api",
+						"comics",
+						"updateComic"
+					]
+				},
+				"description": null
+			},
+			"response": []
+		},
+		{
+			"name": "Modify thumbnail",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "token",
+						"value": "{{userToken}}"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "comicID",
+							"value": "{{comicID}}",
+							"description": "",
+							"type": "text"
+						},
+						{
+							"key": "thumbnail",
+							"description": "",
+							"type": "file"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{domain}}/api/comics/updateThumbnail",
+					"host": [
+						"{{domain}}"
+					],
+					"path": [
+						"api",
+						"comics",
+						"updateThumbnail"
+					]
+				},
+				"description": null
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Comic",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "token",
+						"value": "{{userToken}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"comicID\": \"{{comicID}}\"\n}"
+				},
+				"url": {
+					"raw": "{{domain}}/api/comics/deleteComic",
+					"host": [
+						"{{domain}}"
+					],
+					"path": [
+						"api",
+						"comics",
+						"deleteComic"
+					]
+				},
+				"description": null
+			},
+			"response": []
+		},
+		{
+			"name": "Send Message",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "token",
+						"value": "{{adminToken}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"receiverID\": 1, \n\t\"subject\": \"Test Message 2\",\n\t\"content\": \"This is a test message 2\"\n}"
+				},
+				"url": {
+					"raw": "{{domain}}/api/messages/send",
+					"host": [
+						"{{domain}}"
+					],
+					"path": [
+						"api",
+						"messages",
+						"send"
+					]
+				},
+				"description": null
+			},
+			"response": []
+		},
+		{
+			"name": "Mark Message Read",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "token",
+						"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2NvdW50SUQiOjEsImlhdCI6MTUxODkyNzM5NCwiZXhwIjoxNTE5NTMyMTk0fQ.o5NPAIgvoyRKtHQDV1JDEEO4jxka-jN1vQQA1slq3QE"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"messageID\": 1\n}"
+				},
+				"url": {
+					"raw": "{{domain}}/api/messages/markRead",
+					"host": [
+						"{{domain}}"
+					],
+					"path": [
+						"api",
+						"messages",
+						"markRead"
+					]
+				},
+				"description": null
+			},
+			"response": []
+		},
+		{
+			"name": "Get Messages",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "token",
+						"value": "{{userToken}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"receiverID\": 1, \n\t\"subject\": \"Test Message\",\n\t\"content\": \"This is a test message\"\n}"
+				},
+				"url": {
+					"raw": "{{domain}}/api/messages/list",
+					"host": [
+						"{{domain}}"
+					],
+					"path": [
+						"api",
+						"messages",
+						"list"
+					]
+				},
+				"description": null
+			},
+			"response": []
+		},
+		{
+			"name": "Register User",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"id": "ef0c7d89-5999-46a8-8bd2-c87f76469342",
+						"type": "text/javascript",
+						"exec": [
+							"let names = [\"Sophia\",\"Jackson\",\"Emma\",\"Aiden\",\"Olivia\",\"Lucas\",\"Ava\",\"Liam\",\"Mia\",\"Noah\",\"Isabella\",\"Ethan\",\"Riley\",\"Mason\",\"Aria\",\"Caden\",\"Zoe\",\"Oliver\",\"Charlotte\",\"Elijah\",\"Lily\",\"Grayson\",\"Layla\",\"Jacob\",\"Amelia\",\"Michael\",\"Emily\",\"Benjamin\",\"Madelyn\",\"Carter\",\"Aubrey\",\"James\",\"Adalyn\",\"Jayden\",\"Madison\",\"Logan\",\"Chloe\",\"Alexander\",\"Harper\",\"Caleb\",\"Abigail\",\"Ryan\",\"Aaliyah\",\"Luke\",\"Avery\",\"Daniel\",\"Evelyn\",\"Jack\",\"Kaylee\",\"William\",\"Ella\",\"Owen\",\"Ellie\",\"Gabriel\",\"Scarlett\",\"Matthew\",\"Arianna\",\"Connor\",\"Hailey\",\"Jayce\",\"Nora\",\"Isaac\",\"Addison\",\"Sebastian\",\"Brooklyn\",\"Henry\",\"Hannah\",\"Muhammad\",\"Mila\",\"Cameron\",\"Leah\",\"Wyatt\",\"Elizabeth\",\"Dylan\",\"Sarah\",\"Nathan\",\"Eliana\",\"Nicholas\",\"Mackenzie\",\"Julian\",\"Peyton\",\"Eli\",\"Maria\",\"Levi\",\"Grace\",\"Isaiah\",\"Adeline\",\"Landon\",\"Elena\",\"David\",\"Anna\",\"Christian\",\"Victoria\",\"Andrew\",\"Camilla\",\"Brayden\",\"Lillian\",\"John\",\"Natalie\",\"Lincoln\"]",
+							"let last = [\"Smith\",\"Johnson\",\"Williams\",\"Jones\",\"Brown\",\"Davis\",\"Miller\",\"Wilson\",\"Moore\",\"Taylor\",\"Anderson\",\"Thomas\",\"Jackson\",\"White\",\"Harris\",\"Martin\",\"Thompson\",\"Garcia\",\"Martinez\",\"Robinson\",\"Clark\",\"Rodriguez\",\"Lewis\",\"Lee\",\"Walker\",\"Hall\",\"Allen\",\"Young\",\"Hernandez\",\"King\",\"Wright\",\"Lopez\",\"Hill\",\"Scott\",\"Green\",\"Adams\",\"Baker\",\"Gonzalez\",\"Nelson\",\"Carter\",\"Mitchell\",\"Perez\",\"Roberts\",\"Turner\",\"Phillips\",\"Campbell\",\"Parker\",\"Evans\",\"Edwards\",\"Collins\",\"Stewart\",\"Sanchez\",\"Morris\",\"Rogers\",\"Reed\",\"Cook\",\"Morgan\",\"Bell\",\"Murphy\",\"Bailey\",\"Rivera\",\"Cooper\",\"Richardson\",\"Cox\",\"Howard\",\"Ward\",\"Torres\",\"Peterson\",\"Gray\",\"Ramirez\",\"James\",\"Watson\",\"Brooks\",\"Kelly\",\"Sanders\",\"Price\",\"Bennett\",\"Wood\",\"Barnes\",\"Ross\",\"Henderson\",\"Coleman\",\"Jenkins\",\"Perry\",\"Powell\",\"Long\",\"Patterson\",\"Hughes\",\"Flores\",\"Washington\",\"Butler\",\"Simmons\",\"Foster\",\"Gonzales\",\"Bryant\",\"Alexander\",\"Russell\", \"Griffin\",\"Diaz\",\"Hayes\",]",
+							"let randName = names[Math.floor(Math.random() * Math.floor(names.length))] + ' ' + last[Math.floor(Math.random() * Math.floor(last.length))];",
+							"pm.environment.set(\"username\", randName);",
+							"pm.environment.set(\"password\", \"TestPassword\");",
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"id": "e4f810ed-81b9-400f-96bd-506b45072991",
+						"type": "text/javascript",
+						"exec": [
+							"var jsonData = pm.response.json();",
+							"if (jsonData.token)",
+							"        pm.environment.set(\"userToken\", jsonData.token);",
+							"",
+							"pm.test(\"Response Has Token\", function () {",
+							"    pm.expect(jsonData.token).to.be.an('string');",
+							"});",
+							"",
+							"pm.test(\"Response Has Username\", function () {",
+							"    pm.expect(jsonData.username).to.be.an('string');",
+							"});",
+							"",
+							"pm.test(\"Response Has Role\", function () {",
+							"    pm.expect(jsonData.role).to.be.an('string');",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"username\": \"{{username}}\",\n\t\"password\": \"{{password}}\",\n    \"email\": \"{{username}}@notarealemail.nr\"\n}"
+				},
+				"url": {
+					"raw": "{{domain}}/api/auth/register",
+					"host": [
+						"{{domain}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"register"
+					]
+				},
+				"description": null
+			},
+			"response": []
+		},
+		{
+			"name": "Login",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"password\": \"{{password}}\",\n\t\"usernameOrEmail\": \"{{username}}\"\n}"
+				},
+				"url": {
+					"raw": "{{domain}}/api/auth/login",
+					"host": [
+						"{{domain}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"login"
+					]
+				},
+				"description": null
+			},
+			"response": []
+		},
+		{
+			"name": "List Comics",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "{{domain}}/api/comics/comics",
+					"host": [
+						"{{domain}}"
+					],
+					"path": [
+						"api",
+						"comics",
+						"comics"
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "List My Comics",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "token",
+						"value": "{{userToken}}"
+					}
+				],
+				"body": {},
+				"url": {
+					"raw": "{{domain}}/api/comics/myComics",
+					"host": [
+						"{{domain}}"
+					],
+					"path": [
+						"api",
+						"comics",
+						"myComics"
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		}
+	]
+}
