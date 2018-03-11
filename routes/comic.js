@@ -7,7 +7,9 @@ const upload = require('../upload');
 const tokens = require('../tokens');
 const comicModel = require('../models/comic.model');
 
-/*Get a list of all comics. */
+//Comic Accessors
+
+//Gets a list of all comics
 router.get('/comics', async (req, res, next) => {
     try {
         const result = await comicModel.getAllComics();
@@ -18,7 +20,7 @@ router.get('/comics', async (req, res, next) => {
     }
 });
 
-/*Get a list of owned comics. */
+//Gets a list of owned comics
 router.get('/myComics', tokens.authorize, async (req, res, next) => {
     try {
         const result = await comicModel.getAllOwnedComics(req.user.accountID);
@@ -29,7 +31,7 @@ router.get('/myComics', tokens.authorize, async (req, res, next) => {
     }
 });
 
-// comic insertion
+// Comic Insertion
 
 /* Get a single comic from url */
 router.get('/get/:comicURL', tokens.optionalAuthorize, async (req, res, next) => {
@@ -154,7 +156,7 @@ router.post('/create',
     }
 );
 
-// comic deletion
+// Comic Deletion
 
 //deletes the page's image via deleteImages and
 //removes the page from the database
@@ -223,6 +225,8 @@ router.post('/deleteComic',
         }
     }
 );
+
+//Comic Update and Edits
 
 //updates a comic's metadata - includes titlem description, tagline, and publish status
 router.put('/updateComic',

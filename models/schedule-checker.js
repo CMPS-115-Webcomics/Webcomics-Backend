@@ -85,3 +85,8 @@ schedule.scheduleJob(rule, async () => {
         console.error(err);
     }
 });
+
+//for testing purposes
+module.exports = {
+    releasePages
+};
