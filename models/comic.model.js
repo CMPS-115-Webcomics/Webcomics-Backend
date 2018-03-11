@@ -35,14 +35,14 @@ const addVolume = async (comicID, name, volumeNumber) => {
  * @returns {{volumeid: number}} The id of the created volume
  */
 const addChapter = async (comicID, name, volumeID, chapterNumber) => {
-    const chapterInsertion = await db.query(`
-                INSERT INTO Comics.Chapter 
-                (comicID, name, volumeID, chapterNumber)
-                VALUES ($1, $2, $3, $4)
-                RETURNING chapterID;`, [
+    const created = await db.query(`
+            INSERT INTO Comics.Chapter 
+            (comicID, name, volumeID, chapterNumber)
+            VALUES ($1, $2, $3, $4)
+            RETURNING chapterID;`, [
         comicID, name, volumeID, chapterNumber
     ]);
-    return chapterInsertion.rows[0];
+    return created.rows[0];
 };
 
 /**

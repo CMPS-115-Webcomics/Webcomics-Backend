@@ -145,7 +145,7 @@ router.post('/addChapter',
     validators.canModifyComic,
     async (req, res, next) => {
         try {
-            const chapterData = comicModel.addChapter(
+            const chapterData = await comicModel.addChapter(
                 req.body.comicID,
                 req.body.name || null,
                 req.body.volumeID === 'null' ? null : req.body.volumeID,
