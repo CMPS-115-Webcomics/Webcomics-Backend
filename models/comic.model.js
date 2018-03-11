@@ -128,43 +128,46 @@ const shiftChapterNumDown = async (chapterNumber, volumeID) => {
  * @returns {void}
  */
 const movePage = async (pageID, chapterID) => {
+    try {
+        const sameComicQuery = await db.query(`
+            SELECT comicID
+            FROM Comics.Chapter
+            WHERE chapterID = $1 AND comicID = (SELECT comicID FROM Comics.Page WHERE pageID = $2)
+        `, [chapterID, pageID]);
 
-    const sameComicQuery = await db.query(`
-        SELECT comicID
-        FROM Comics.Chapter
-        WHERE chapterID = $1 AND comicID = (SELECT comicID FROM Comics.Page WHERE pageID = $2)
-    `, [chapterID, pageID]);
+        if (sameComicQuery.rowCount === 0) {
+            console.error('Page must move to a chapter that is in the same comic');
+            return;
+        }
 
-    if (sameComicQuery.rowCount === 0) {
-        console.error('Page must move to a chapter that is in the same comic');
-        return;
+        const pageNumQuery = await db.query(`
+            SELECT MAX(pageNumber) + 1 AS pageNum
+            FROM Comics.Page
+            WHERE chapterID = $1
+        `, [chapterID]);
+
+        const pageNum = pageNumQuery.rows[0].pagenum || 1;
+
+        const oldDataQuery = await db.query(`
+            SELECT chapterID, pageNumber
+            FROM Comics.Page
+            WHERE pageID = $1
+        `, [pageID]);
+
+        await db.query(`
+            UPDATE Comics.Page 
+            SET chapterID = $1, pageNumber = $2, published = 'f'
+            WHERE pageID = $3;
+        `, [
+            chapterID, pageNum, pageID
+        ]);
+
+        const oldPageNum = oldDataQuery.rows[0].pagenumber;
+        const oldChapter = oldDataQuery.rows[0].chapterid || null;
+        await shiftPageNumDown(oldPageNum, oldChapter);
+    } catch (err) {
+        throw err;
     }
-
-    const pageNumQuery = await db.query(`
-        SELECT MAX(pageNumber) + 1 AS pageNum
-        FROM Comics.Page
-        WHERE chapterID = $1
-    `, [chapterID]);
-
-    const pageNum = pageNumQuery.rows[0].pagenum || 1;
-
-    const oldDataQuery = await db.query(`
-        SELECT chapterID, pageNumber
-        FROM Comics.Page
-        WHERE pageID = $1
-    `, [pageID]);
-
-    await db.query(`
-        UPDATE Comics.Page 
-        SET chapterID = $1, pageNumber = $2, published = 'f'
-        WHERE pageID = $3;
-    `, [
-        chapterID, pageNum, pageID
-    ]);
-
-    const oldPageNum = oldDataQuery.rows[0].pagenumber;
-    const oldChapter = oldDataQuery.rows[0].chapterid || null;
-    await shiftPageNumDown(oldPageNum, oldChapter);
 };
 
 /**
@@ -176,48 +179,51 @@ const movePage = async (pageID, chapterID) => {
  * @returns {void}
  */
 const moveChapter = async (chapterID, volumeID) => {
+    try {
+        const sameComicQuery = await db.query(`
+            SELECT comicID
+            FROM Comics.Volume
+            WHERE volumeID = $1 AND comicID = (SELECT comicID FROM Comics.Chapter WHERE chapterID = $2)
+        `, [volumeID, chapterID]);
 
-    const sameComicQuery = await db.query(`
-        SELECT comicID
-        FROM Comics.Volume
-        WHERE volumeID = $1 AND comicID = (SELECT comicID FROM Comics.Chapter WHERE chapterID = $2)
-    `, [volumeID, chapterID]);
+        if (sameComicQuery.rowCount === 0) {
+            console.error('Chapter must move to a volume that is in the same comic');
+            return;
+        }
 
-    if (sameComicQuery.rowCount === 0) {
-        console.error('Chapter must move to a volume that is in the same comic');
-        return;
+        const chapterNumQuery = await db.query(`
+            SELECT MAX(chapterNumber) + 1 AS chapterNum
+            FROM Comics.Chapter
+            WHERE volumeID = $1
+        `, [volumeID]);
+
+        const chapterNum = chapterNumQuery.rows[0].chapternum || 1;
+
+        const oldDataQuery = await db.query(`
+            SELECT volumeID, chapterNumber
+            FROM Comics.Chapter
+            WHERE chapterID = $1
+        `, [chapterID]);
+
+        await db.query(`
+            UPDATE Comics.Page
+            SET published = 'f'
+            WHERE chapterID = $1`, [chapterID]);
+
+        await db.query(`
+            UPDATE Comics.Chapter 
+            SET volumeID = $1, chapterNumber = $2, published = 'f'
+            WHERE chapterID = $3;
+        `, [
+            volumeID, chapterNum, chapterID
+        ]);
+
+        const oldChapterNum = oldDataQuery.rows[0].pagenumber;
+        const oldVolume = oldDataQuery.rows[0].volumeid;
+        await shiftChapterNumDown(oldChapterNum, oldVolume);
+    } catch (err) {
+        throw err;
     }
-
-    const chapterNumQuery = await db.query(`
-        SELECT MAX(chapterNumber) + 1 AS chapterNum
-        FROM Comics.Chapter
-        WHERE volumeID = $1
-    `, [volumeID]);
-
-    const chapterNum = chapterNumQuery.rows[0].chapternum || 1;
-
-    const oldDataQuery = await db.query(`
-        SELECT volumeID, chapterNumber
-        FROM Comics.Chapter
-        WHERE chapterID = $1
-    `, [chapterID]);
-
-    await db.query(`
-        UPDATE Comics.Page
-        SET published = 'f'
-        WHERE chapterID = $1`, [chapterID]);
-
-    await db.query(`
-        UPDATE Comics.Chapter 
-        SET volumeID = $1, chapterNumber = $2, published = 'f'
-        WHERE chapterID = $3;
-    `, [
-        volumeID, chapterNum, chapterID
-    ]);
-
-    const oldChapterNum = oldDataQuery.rows[0].pagenumber;
-    const oldVolume = oldDataQuery.rows[0].volumeid;
-    await shiftChapterNumDown(oldChapterNum, oldVolume);
 };
 
 module.exports = {
