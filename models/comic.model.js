@@ -69,12 +69,11 @@ const createComic = async comicData => {
         ]);
 
         const newComicData = created.rows[0];
-
         if (comicData.organization === 'volumes') {
             const volumeID = (await addVolume(newComicData.comicid, null, 1)).volumeid;
             await addChapter(newComicData.comicid, null, volumeID, 1);
-        } else if (comicData.organization === 'pages') {
-            await addChapter(newComicData.comicID, null, null, 1);
+        } else if (comicData.organization === 'chapters') {
+            await addChapter(newComicData.comicid, null, null, 1);
         }
         return newComicData;
     } catch (err) {
