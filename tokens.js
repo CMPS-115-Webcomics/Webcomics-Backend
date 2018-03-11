@@ -95,9 +95,19 @@ const authorize = async (req, res, next) => {
     next();
 };
 
+const optionalAuthorize = async (req, res, next) => {
+    try {
+        req.user = jwt.verify(req.header('token'), config.jwtSecret);
+    } catch (e) {
+        // Unauthrozed is ok
+    }
+    next();
+};
+
 module.exports = {
     createUserToken,
     createEmailVerificationToken,
     createPasswordResetToken,
-    authorize
+    authorize,
+    optionalAuthorize
 };
