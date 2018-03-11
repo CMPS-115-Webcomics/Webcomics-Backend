@@ -323,11 +323,13 @@ router.put('/updateThumbnail',
             return;
         }
         try {
-            await db.query(`
+            const urlQuery = await db.query(`
                 SELECT thumbnailURL 
                 FROM Comics.Comics
                 WHERE comicID = $1
             `, [req.body.comicID]);
+
+            deleteImages(urlQuery.rows);
 
             await db.query(`
                 UPDATE Comics.Comic
