@@ -2,9 +2,6 @@
 
 const express = require('express');
 const router = express.Router();
-const {
-    db
-} = require('../models/db');
 const validators = require('./validators');
 const upload = require('../upload');
 const tokens = require('../tokens');
@@ -157,14 +154,6 @@ router.post('/addVolume',
 
 // comic deletion
 
-//deletes images from the cloud by using their URLs
-const deleteImages = rows => {
-    for (const row of rows) {
-        const url = row.imgurl || row.thumbnailurl;
-        upload.deleteFromGCS(url, row.imgurl !== undefined);
-    }
-};
-
 //deletes the page's image via deleteImages and
 //removes the page from the database
 router.post('/deletePage',
@@ -173,17 +162,7 @@ router.post('/deletePage',
     validators.canModifyComic,
     async (req, res, next) => {
         try {
-            const urlQuery = await db.query(`
-                SELECT imgURL
-                FROM Comics.Page
-                WHERE pageID = $1`, [req.body.pageID]);
-
-            deleteImages(urlQuery.rows);
-
-            await db.query(`
-                DELETE FROM Comics.Page
-                WHERE comicID = $1`, [req.body.pageID]);
-
+            await comicModel.deletePage(req.body.pageID);
             res.status(200).send('Page was deleted.');
         } catch (err) {
             next(err);
@@ -200,17 +179,7 @@ router.post('/deleteChapter',
     validators.canModifyComic,
     async (req, res, next) => {
         try {
-            const urlQuery = await db.query(`
-                SELECT imgURL
-                FROM Comics.Page
-                WHERE chapterID = $1`, [req.body.chapterID]);
-
-            deleteImages(urlQuery.rows);
-
-            await db.query(`
-                DELETE FROM Comics.Chapter
-                WHERE chapterID = $1`, [req.body.chapterID]);
-
+            await comicModel.deleteChapter(req.body.chapterID);
             res.status(200).send('Chapter was deleted.');
         } catch (err) {
             next(err);
@@ -227,21 +196,7 @@ router.post('/deleteVolume',
     validators.canModifyComic,
     async (req, res, next) => {
         try {
-            const urlQuery = await db.query(`
-                SELECT p.imgURL
-                FROM Comics.Page p
-                WHERE p.chapterID IN (
-                    SELECT c.chapterID
-                    FROM Comics.Chapter c
-                    WHERE c.volumeID = $1
-                );`, [req.body.volumeID]);
-
-            deleteImages(urlQuery.rows);
-
-            await db.query(`
-                DELETE FROM Comics.Volume
-                WHERE volumeID = $1`, [req.body.volumeID]);
-
+            await comicModel.deleteVolume(req.body.volumeID);
             res.status(200).send('Volume was deleted.');
         } catch (err) {
             next(err);
@@ -258,24 +213,7 @@ router.post('/deleteComic',
     validators.canModifyComic,
     async (req, res, next) => {
         try {
-            const urlQuery = await db.query(`
-                SELECT imgURL
-                FROM Comics.Page
-                WHERE comicID = $1`, [req.body.comicID]);
-
-            deleteImages(urlQuery.rows);
-
-            const thumbnailQuery = await db.query(`
-                SELECT thumbnailURL
-                FROM Comics.Comic
-                WHERE comicID = $1`, [req.body.comicID]);
-
-            deleteImages(thumbnailQuery.rows);
-
-            await db.query(`
-                DELETE FROM Comics.Comic
-                WHERE comicID = $1`, [req.body.comicID]);
-
+            await comicModel.deleteComic(req.body.comicID);
             res.status(200).send('Comic was deleted.');
         } catch (err) {
             next(err);
@@ -291,17 +229,13 @@ router.put('/updateComic',
     validators.canModifyComic,
     async (req, res, next) => {
         try {
-            await db.query(`
-                UPDATE Comics.Comic
-                SET title = $1, description = $2, published = $3, tagline = $4
-                WHERE comicID = $5
-            `, [
+            await comicModel.updateComic(
                 req.body.title,
                 req.body.description,
                 req.body.published,
                 req.body.tagline,
                 req.body.comicID
-            ]);
+            );
             res.sendStatus(200);
         } catch (err) {
             next(err);
@@ -323,21 +257,7 @@ router.put('/updateThumbnail',
             return;
         }
         try {
-            const urlQuery = await db.query(`
-                SELECT thumbnailURL 
-                FROM Comics.Comics
-                WHERE comicID = $1
-            `, [req.body.comicID]);
-
-            deleteImages(urlQuery.rows);
-
-            await db.query(`
-                UPDATE Comics.Comic
-                SET thumbnailURL = $1
-                WHERE comicID    = $2`, [
-                req.file.fileKey,
-                req.body.comicID
-            ]);
+            await comicModel.updateThumbnail(req.file.fileKey, req.body.comicID);
             res.sendStatus(200);
         } catch (err) {
             next(err);
