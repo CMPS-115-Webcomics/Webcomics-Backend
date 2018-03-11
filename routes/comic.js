@@ -13,10 +13,8 @@ const comicModel = require('../models/comic.model');
 /*Get a list of all comics. */
 router.get('/comics', async (req, res, next) => {
     try {
-        const result = await db.query(`
-            SELECT comicID, accountID, title, comicURL, tagline, description, thumbnailURL 
-            FROM Comics.Comic ORDER BY title`);
-        res.json(result.rows);
+        const result = await comicModel.getAllComics;
+        res.json(result);
     } catch (err) {
         next(err);
         return;
@@ -26,12 +24,8 @@ router.get('/comics', async (req, res, next) => {
 /*Get a list of owned comics. */
 router.get('/myComics', tokens.authorize, async (req, res, next) => {
     try {
-        const result = await db.query(`
-            SELECT comicID, accountID, title, comicURL, tagline, description, thumbnailURL 
-            FROM Comics.Comic
-            WHERE accountID = $1
-            ORDER BY title`, [req.user.accountID]);
-        res.json(result.rows);
+        const result = await comicModel.getAllOwnedComics(req.user.accountID);
+        res.json(result);
     } catch (err) {
         next(err);
         return;
@@ -41,43 +35,15 @@ router.get('/myComics', tokens.authorize, async (req, res, next) => {
 // comic insertion
 
 /* Get a single comic from url */
-router.get('/get/:comicURL', async (req, res, next) => {
+router.get('/get/:comicURL', tokens.optionalAuthorize, async (req, res, next) => {
     try {
-        const comicQuery = await db.query('SELECT * FROM Comics.Comic WHERE comicURL = $1', [req.params.comicURL]);
-
-        if (comicQuery.rowCount === 0) {
-            res.status(400).send(`No comic with url ${req.params.comicURL}`);
+        const comicURL = req.params.comicURL;
+        const comic = (typeof req.user !== 'undefined' ?
+            comicModel.getOwnedComic(comicURL) : comicModel.getPublishedComic(comicURL));
+        if (comic === -1) {
+            res.status(400).send(`No comic with url ${comicURL}`);
             return;
         }
-
-        const comic = comicQuery.rows[0];
-        const comicID = comic.comicid;
-
-        comic.chapters = (await db.query(`
-            SELECT *
-            FROM Comics.Chapter
-            WHERE comicID = $1
-            ORDER BY chapterNumber`, [comicID])).rows;
-
-        comic.volumes = (await db.query(`
-            SELECT *
-            FROM Comics.Volume
-            WHERE comicID = $1
-            ORDER BY volumeNumber`, [comicID])).rows;
-
-        comic.pages = (await db.query(`
-            SELECT *
-            FROM Comics.Page
-            WHERE comicID = $1
-            ORDER BY pageNumber`, [comicID]))
-            .rows;
-
-        comic.owner = (await db.query(`
-            SELECT a.username, a.profileURL
-            FROM Comics.Account a
-            WHERE a.accountID = $1`, [comic.accountid]))
-            .rows[0];
-
         res.json(comic);
     } catch (err) {
         next(err);
@@ -117,20 +83,28 @@ router.post('/create',
     }
 );
 
-//adds a new volume for a given comic to the database
-router.post('/addVolume',
+//adds a new page for a given comic to the database
+router.post(
+    '/addPage',
     tokens.authorize,
-    validators.requiredAttributes(['comicID', 'volumeNumber']),
+    upload.multer.single('file'),
+    validators.requiredAttributes(['comicID', 'pageNumber']),
     validators.canModifyComic,
+    upload.sendUploadToGCS(true),
     async (req, res, next) => {
+        if (!req.file || !req.file.fileKey) {
+            res.status(400).send('No image uploaded');
+            return;
+        }
         try {
-            const volumeData = await comicModel.addVolume(
+            await comicModel.addPage(
+                req.body.pageNumber,
                 req.body.comicID,
-                req.body.name || null,
-                req.body.volumeNumber
+                req.body.altText || null,
+                req.body.chapterID === 'null' ? null : req.body.chapterID,
+                req.file.fileKey
             );
-            res.status(201)
-                .json(volumeData);
+            res.status(201).json();
         } catch (err) {
             next(err);
             return;
@@ -160,32 +134,20 @@ router.post('/addChapter',
     }
 );
 
-//adds a new page for a given comic to the database
-router.post(
-    '/addPage',
+//adds a new volume for a given comic to the database
+router.post('/addVolume',
     tokens.authorize,
-    upload.multer.single('file'),
-    validators.requiredAttributes(['comicID', 'pageNumber']),
+    validators.requiredAttributes(['comicID', 'volumeNumber']),
     validators.canModifyComic,
-    upload.sendUploadToGCS(true),
     async (req, res, next) => {
-        if (!req.file || !req.file.fileKey) {
-            res.status(400).send('No image uploaded');
-            return;
-        }
         try {
-            await db.query(`
-                INSERT INTO Comics.Page 
-                (pageNumber, comicID, altText, chapterID, imgUrl)
-                VALUES ($1, $2, $3, $4, $5)`, [
-                req.body.pageNumber,
+            const volumeData = await comicModel.addVolume(
                 req.body.comicID,
-                req.body.altText || null,
-                req.body.chapterID === 'null' ? null : req.body.chapterID,
-                req.file.fileKey
-            ]);
-
-            res.status(201).json();
+                req.body.name || null,
+                req.body.volumeNumber
+            );
+            res.status(201)
+                .json(volumeData);
         } catch (err) {
             next(err);
             return;
@@ -203,33 +165,53 @@ const deleteImages = rows => {
     }
 };
 
-//deletes all images associated with the comic by using deleteImages
-//and removes the comic and all its contents from the database
-router.post('/deleteComic',
+//deletes the page's image via deleteImages and
+//removes the page from the database
+router.post('/deletePage',
     tokens.authorize,
-    validators.requiredAttributes(['comicID']),
+    validators.requiredAttributes(['pageID']),
     validators.canModifyComic,
     async (req, res, next) => {
         try {
             const urlQuery = await db.query(`
                 SELECT imgURL
                 FROM Comics.Page
-                WHERE comicID = $1`, [req.body.comicID]);
+                WHERE pageID = $1`, [req.body.pageID]);
 
             deleteImages(urlQuery.rows);
 
-            const thumbnailQuery = await db.query(`
-                SELECT thumbnailURL
-                FROM Comics.Comic
-                WHERE comicID = $1`, [req.body.comicID]);
+            await db.query(`
+                DELETE FROM Comics.Page
+                WHERE comicID = $1`, [req.body.pageID]);
 
-            deleteImages(thumbnailQuery.rows);
+            res.status(200).send('Page was deleted.');
+        } catch (err) {
+            next(err);
+            return;
+        }
+    }
+);
+
+//deletes all images associated with the chapter via deleteImages
+//and removes the chapter and its contents from the database
+router.post('/deleteChapter',
+    tokens.authorize,
+    validators.requiredAttributes(['chapterID']),
+    validators.canModifyComic,
+    async (req, res, next) => {
+        try {
+            const urlQuery = await db.query(`
+                SELECT imgURL
+                FROM Comics.Page
+                WHERE chapterID = $1`, [req.body.chapterID]);
+
+            deleteImages(urlQuery.rows);
 
             await db.query(`
-                DELETE FROM Comics.Comic
-                WHERE comicID = $1`, [req.body.comicID]);
+                DELETE FROM Comics.Chapter
+                WHERE chapterID = $1`, [req.body.chapterID]);
 
-            res.status(200).send('Comic was deleted.');
+            res.status(200).send('Chapter was deleted.');
         } catch (err) {
             next(err);
             return;
@@ -268,26 +250,33 @@ router.post('/deleteVolume',
     }
 );
 
-//deletes all images associated with the chapter via deleteImages
-//and removes the chapter and its contents from the database
-router.post('/deleteChapter',
+//deletes all images associated with the comic by using deleteImages
+//and removes the comic and all its contents from the database
+router.post('/deleteComic',
     tokens.authorize,
-    validators.requiredAttributes(['chapterID']),
+    validators.requiredAttributes(['comicID']),
     validators.canModifyComic,
     async (req, res, next) => {
         try {
             const urlQuery = await db.query(`
                 SELECT imgURL
                 FROM Comics.Page
-                WHERE chapterID = $1`, [req.body.chapterID]);
+                WHERE comicID = $1`, [req.body.comicID]);
 
             deleteImages(urlQuery.rows);
 
-            await db.query(`
-                DELETE FROM Comics.Chapter
-                WHERE chapterID = $1`, [req.body.chapterID]);
+            const thumbnailQuery = await db.query(`
+                SELECT thumbnailURL
+                FROM Comics.Comic
+                WHERE comicID = $1`, [req.body.comicID]);
 
-            res.status(200).send('Chapter was deleted.');
+            deleteImages(thumbnailQuery.rows);
+
+            await db.query(`
+                DELETE FROM Comics.Comic
+                WHERE comicID = $1`, [req.body.comicID]);
+
+            res.status(200).send('Comic was deleted.');
         } catch (err) {
             next(err);
             return;
@@ -295,34 +284,7 @@ router.post('/deleteChapter',
     }
 );
 
-//deletes the page's image via deleteImages and
-//removes the page from the database
-router.post('/deletePage',
-    tokens.authorize,
-    validators.requiredAttributes(['pageID']),
-    validators.canModifyComic,
-    async (req, res, next) => {
-        try {
-            const urlQuery = await db.query(`
-                SELECT imgURL
-                FROM Comics.Page
-                WHERE pageID = $1`, [req.body.pageID]);
-
-            deleteImages(urlQuery.rows);
-
-            await db.query(`
-                DELETE FROM Comics.Page
-                WHERE comicID = $1`, [req.body.pageID]);
-
-            res.status(200).send('Page was deleted.');
-        } catch (err) {
-            next(err);
-            return;
-        }
-    }
-);
-
-//making a route to updating the comic
+//updates a comic's metadata - includes titlem description, tagline, and publish status
 router.put('/updateComic',
     tokens.authorize,
     validators.requiredAttributes(['comicID', 'title', 'description', 'tagline', 'published']),
@@ -331,13 +293,9 @@ router.put('/updateComic',
         try {
             await db.query(`
                 UPDATE Comics.Comic
-                SET title       = $1,
-                    description = $2,
-                    published   = $3,
-                    tagline     = $4
-                WHERE 
-                    comicID     = $5
-                    `, [
+                SET title = $1, description = $2, published = $3, tagline = $4
+                WHERE comicID = $5
+            `, [
                 req.body.title,
                 req.body.description,
                 req.body.published,
@@ -365,6 +323,12 @@ router.put('/updateThumbnail',
             return;
         }
         try {
+            await db.query(`
+                SELECT thumbnailURL 
+                FROM Comics.Comics
+                WHERE comicID = $1
+            `, [req.body.comicID]);
+
             await db.query(`
                 UPDATE Comics.Comic
                 SET thumbnailURL = $1

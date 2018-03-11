@@ -4,6 +4,125 @@ const {
     db
 } = require('./db');
 
+/**
+ * Gets a list of all comics
+ *
+ * @returns {*} Returns info about every comic
+ */
+const getAllComics = async () => {
+    const result = await db.query(`
+        SELECT comicID, accountID, title, comicURL, tagline, description, thumbnailURL 
+        FROM Comics.Comic ORDER BY title`);
+    return result.rows;
+};
+
+/**
+ * Gets a list of all owned comics
+ *
+ * @param {number} accountID - id of the comic owner's account
+ *
+ * @returns {*} Returns info about every comic owned by an author
+ */
+const getAllOwnedComics = async accountID => {
+    const result = await db.query(`
+        SELECT comicID, accountID, title, comicURL, tagline, description, thumbnailURL 
+        FROM Comics.Comic
+        WHERE accountID = $1
+        ORDER BY title`, [accountID]);
+    return result.rows;
+};
+
+/**
+ * Gets a single comic
+ *
+ * @param {*} comic - vessel to store comic info in
+ *
+ * @returns {*} Returns info about the comic
+ */
+const getComicInfo = async comic => {
+        const comicID = comic.comicid;
+
+        comic.chapters = (await db.query(`
+            SELECT *
+            FROM Comics.Chapter
+            WHERE comicID = $1
+            ORDER BY chapterNumber`, [comicID])).rows;
+
+        comic.volumes = (await db.query(`
+            SELECT *
+            FROM Comics.Volume
+            WHERE comicID = $1
+            ORDER BY volumeNumber`, [comicID])).rows;
+
+        comic.pages = (await db.query(`
+            SELECT *
+            FROM Comics.Page
+            WHERE comicID = $1
+            ORDER BY pageNumber`, [comicID]))
+            .rows;
+
+        comic.owner = (await db.query(`
+            SELECT a.username, a.profileURL
+            FROM Comics.Account a
+            WHERE a.accountID = $1`, [comic.accountid]))
+            .rows[0];
+
+            return comic;
+};
+
+/**
+ * Gets a single published comic
+ *
+ * @param {string} comicURL - id of the comic owner's account
+ *
+ * @returns {*} Returns info about the comic owned by an author if it is published
+ */
+const getPublishedComic = async comicURL => {
+    const comicQuery = await db.query(`
+        SELECT * FROM Comics.Comic 
+        WHERE comicURL = $1 AND published = 't'`, [comicURL]);
+
+        if (comicQuery.rowCount === 0) {
+            return -1;
+        }
+        return await getComicInfo(comicQuery.rows[0]);
+};
+
+/**
+ * Gets a single owned comic
+ *
+ * @param {string} comicURL - id of the comic owner's account
+ *
+ * @returns {*} Returns info about the comic owned by an author
+ */
+const getOwnedComic = async comicURL => {
+    const comicQuery = await db.query(`
+        SELECT * FROM Comics.Comic 
+        WHERE comicURL = $1`, [comicURL]);
+
+        if (comicQuery.rowCount === 0) {
+            return -1;
+        }
+        return await getComicInfo(comicQuery.rows[0]);
+};
+
+/**
+ * Adds a new page for a given comic to the database
+ *
+ * @param {number} pageNumber - The page numbering
+ * @param {number} comicID - The ID of the comic that owns this page
+ * @param {string | null} altText - The alternate text of this page
+ * @param {number | null} chapterID - The ID of the chapter that owns this page
+ * @param {number} fileKey -The file key to the page's image
+ *
+ * @returns {void}
+ */
+const addPage = async (pageNumber, comicID, altText, chapterID, fileKey) => {
+    await db.query(`
+        INSERT INTO Comics.Page 
+        (pageNumber, comicID, altText, chapterID, imgUrl)
+        VALUES ($1, $2, $3, $4, $5)`, [pageNumber, comicID, altText, chapterID, fileKey]);
+};
 
 /**
  * Adds a new chapter for a given comic to the database
@@ -17,12 +136,11 @@ const {
  */
 const addChapter = async (comicID, name, volumeID, chapterNumber) => {
     const created = await db.query(`
-            INSERT INTO Comics.Chapter 
-            (comicID, name, volumeID, chapterNumber)
-            VALUES ($1, $2, $3, $4)
-            RETURNING chapterID;`, [
-        comicID, name, volumeID, chapterNumber
-    ]);
+        INSERT INTO Comics.Chapter 
+        (comicID, name, volumeID, chapterNumber)
+        VALUES ($1, $2, $3, $4)
+        RETURNING chapterID;
+    `, [comicID, name, volumeID, chapterNumber]);
     return created.rows[0];
 };
 
@@ -37,12 +155,11 @@ const addChapter = async (comicID, name, volumeID, chapterNumber) => {
  */
 const addVolume = async (comicID, name, volumeNumber) => {
     const created = await db.query(`
-            INSERT INTO Comics.Volume 
-            (comicID, name, volumeNumber)
-            VALUES ($1, $2, $3)
-            RETURNING volumeID`, [
-        comicID, name, volumeNumber
-    ]);
+        INSERT INTO Comics.Volume 
+        (comicID, name, volumeNumber)
+        VALUES ($1, $2, $3)
+        RETURNING volumeID
+    `, [comicID, name, volumeNumber]);
     const volumeID = created.rows[0].volumeid;
     const chapterData = await addChapter(comicID, null, volumeID, 1);
     return {
@@ -51,11 +168,10 @@ const addVolume = async (comicID, name, volumeNumber) => {
     };
 };
 
-
 /**
  * Creates a new comic based on the given data
  *
- * @param {*} comicData The comics information
+ * @param {*} comicData The comic's information
  * @returns {*} The resulting comic
  */
 const createComic = async comicData => {
@@ -232,9 +348,14 @@ const moveChapter = async (chapterID, volumeID) => {
 };
 
 module.exports = {
+    getAllComics,
+    getAllOwnedComics,
+    getPublishedComic,
+    getOwnedComic,
     createComic,
-    addVolume,
+    addPage,
     addChapter,
+    addVolume,
     movePage,
     moveChapter
 };
