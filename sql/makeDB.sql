@@ -11,7 +11,7 @@ CREATE TABLE Comics.Account (
     banned              BOOLEAN DEFAULT false NOT NULL,
     biography           VARCHAR(5000),
     joined              DATE DEFAULT CURRENT_DATE NOT NULL,
-    password            VARCHAR(256) NOT NULL,
+    password            VARCHAR(256) NOT NULL CHECK (LENGTH(password) > 7),
     salt                VARCHAR(32) NOT NULL,
     role                Comics.USER_ROLE DEFAULT 'user' NOT NULL
 );
@@ -37,12 +37,12 @@ CREATE TYPE Comics.ORGANIZATION_TYPE AS ENUM ('pages', 'chapters', 'volumes');
 CREATE TABLE Comics.Comic (
     comicID             SERIAL PRIMARY KEY,
     accountID           INTEGER NOT NULL,
-    title               VARCHAR(50) UNIQUE NOT NULL,
-    comicURL            VARCHAR(30) UNIQUE NOT NULL CHECK(comicURL SIMILAR TO '[-a-z0-9]+'),
-    thumbnailURL        VARCHAR(255) NOT NULL,
+    title               VARCHAR(50) UNIQUE NOT NULL CHECK (title <> ''),
+    comicURL            VARCHAR(30) UNIQUE NOT NULL CHECK(comicURL SIMILAR TO '[-a-z0-9]+' AND comicURL <> ''),
+    thumbnailURL        VARCHAR(255) NOT NULL CHECK (thumbnailURL <> ''),
     published           BOOLEAN DEFAULT false NOT NULL,
-    tagline             VARCHAR(30) NOT NULL,
-    description         VARCHAR(1000) NOT NULL,
+    tagline             VARCHAR(30) NOT NULL CHECK (tagline <> ''),
+    description         VARCHAR(1000) NOT NULL CHECK (description <> ''),
     organization        Comics.ORGANIZATION_TYPE DEFAULT 'chapters' NOT NULL,
     created             DATE DEFAULT CURRENT_DATE NOT NULL,
     updated             DATE DEFAULT CURRENT_DATE NOT NULL,
@@ -53,7 +53,7 @@ CREATE TABLE Comics.Volume (
     volumeID            SERIAL PRIMARY KEY,
     comicID             INTEGER NOT NULL,
     volumeNumber        INTEGER NOT NULL,
-    name                VARCHAR(50),
+    name                VARCHAR(50) CHECK (name <> ''),
     published           BOOLEAN DEFAULT false NOT NULL,
     UNIQUE( volumeNumber, comicID ),
     FOREIGN KEY (comicID) REFERENCES Comics.Comic(comicID) ON DELETE CASCADE
@@ -63,7 +63,7 @@ CREATE TABLE Comics.Chapter (
     chapterID           SERIAL PRIMARY KEY,
     volumeID            INTEGER,
     chapterNumber       INTEGER NOT NULL,
-    name                VARCHAR(50),
+    name                VARCHAR(50) CHECK (name <> ''),
     published           BOOLEAN DEFAULT false,
     comicID             INTEGER NOT NULL,
     UNIQUE( chapterNumber, volumeID, comicID ),
@@ -79,7 +79,7 @@ CREATE TABLE Comics.Page (
     chapterID           INTEGER,
     comicID             INTEGER NOT NULL,
     altText             VARCHAR(300),
-    imgURL              VARCHAR(255),
+    imgURL              VARCHAR(255) CHECK (imgURL <> ''),
     published           BOOLEAN DEFAULT false,
     UNIQUE ( pageNumber, comicID, chapterID ),
     FOREIGN KEY (chapterID) REFERENCES Comics.Chapter(chapterID) ON DELETE CASCADE,
@@ -96,8 +96,8 @@ CREATE TABLE Comics.Schedule (
     updateType          Comics.RELEASE_FREQUENCY NOT NULL,
     updateWeek          INTEGER, -- Range is 1 to 4, where the first week of month is 1; uses postgresql's week def
     PRIMARY KEY (comicID, updateDay),
-    CONSTRAINT day_range CHECK (updateDay > 0 AND updateDay < 8), 
-    CONSTRAINT week_range CHECK (updateWeek > 0 AND updateWeek < 5),
+    CONSTRAINT day_range CHECK (updateDay >= 1 AND updateDay <= 7), 
+    CONSTRAINT week_range CHECK (updateWeek >= 1 AND updateWeek <= 4),
     CONSTRAINT monthly_release CHECK (updateType = 'weekly' OR (updateType = 'monthly' AND updateWeek IS NOT NULL)),
     FOREIGN KEY (comicID) REFERENCES Comics.Comic(comicID) ON DELETE CASCADE
 );

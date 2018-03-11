@@ -28,5 +28,7 @@ const config = {
 };
 
 process.env.GOOGLE_APPLICATION_CREDENTIALS = config.googleCredentialPath;
-
+if (config.admin.password.length < 8) {
+    throw new Error('Admin password too short, must be at least 8 characters');
+}
 module.exports = config;
