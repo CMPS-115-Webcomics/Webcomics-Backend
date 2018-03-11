@@ -86,7 +86,6 @@ router.get('/get/:comicURL', async (req, res, next) => {
 
 });
 
-
 //Generate a new comic and add it to the database
 router.post('/create',
     tokens.authorize,
@@ -381,5 +380,40 @@ router.put('/updateThumbnail',
     }
 );
 
+router.put('/movePage',
+    tokens.authorize,
+    validators.requiredAttributes(['pageID, chapterID']),
+    validators.canModifyComic,
+    async (req, res, next) => {
+        try {
+            comicModel.movePage(
+                req.body.pageID,
+                req.body.chapterID
+            );
+            res.sendStatus(200);
+        } catch (err) {
+            next(err);
+            return;
+        }
+    }
+);
+
+router.put('/moveChapter',
+    tokens.authorize,
+    validators.requiredAttributes(['chapterID, volumeID']),
+    validators.canModifyComic,
+    async (req, res, next) => {
+        try {
+            comicModel.moveChapter(
+                req.body.chapterID,
+                req.body.volumeID
+            );
+            res.sendStatus(200);
+        } catch (err) {
+            next(err);
+            return;
+        }
+    }
+);
 
 module.exports = router;

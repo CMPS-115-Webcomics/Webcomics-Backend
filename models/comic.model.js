@@ -75,8 +75,148 @@ const createComic = async comicData => {
     return created.rows[0];
 };
 
+/**
+ * Shifts all of a chapter's page numbers greater than the one given down one
+ *
+ * @param {number} pageNumber - The page number that was removed
+ * @param {number | null} chapterID - The chapter that the page was in
+ *
+ * @returns {void}
+ */
+const shiftPageNumDown = async (pageNumber, chapterID) => {
+    if (!chapterID) {
+        await db.query(`
+            UPDATE Comics.Page
+            SET pageNumber = pageNumber - 1
+            WHERE chapterID IS NULL AND pageNumber > $1`, [pageNumber]);
+    } else {
+        await db.query(`
+            UPDATE Comics.Page
+            SET pageNumber = pageNumber - 1
+            WHERE chapterID = $1 AND pageNumber > $2`, [chapterID, pageNumber]);
+    }
+};
+
+/**
+ * Shifts all of a volume's chapter numbers greater than the one given down one
+ *
+ * @param {number} chapterNumber - The chapter number that was removed
+ * @param {number} volumeID - The volume that the page was in
+ *
+ * @returns {void}
+ */
+const shiftChapterNumDown = async (chapterNumber, volumeID) => {
+    await db.query(`
+        UPDATE Comics.Chapter
+        SET chapterNumber = chapterNumber - 1
+        WHERE volumeID = $1 AND chapterNumber > $2`, [volumeID, chapterNumber]);
+};
+
+/**
+ * Moves a page to another chapter in the same comic
+ *
+ * @param {number} pageID - The ID of the page being moved
+ * @param {number | null} chapterID - The chapter that the page will be moved to
+ *
+ * @returns {void}
+ */
+const movePage = async (pageID, chapterID) => {
+
+    const sameComicQuery = await db.query(`
+        SELECT comicID
+        FROM Comics.Chapter
+        WHERE chapterID = $1 AND comicID = (SELECT comicID FROM Comics.Page WHERE pageID = $2)
+    `, [chapterID, pageID]);
+
+    if (sameComicQuery.rowCount === 0) {
+        console.error('Page must move to a chapter that is in the same comic');
+        return;
+    }
+
+    const pageNumQuery = await db.query(`
+        SELECT MAX(pageNumber) + 1 AS pageNum
+        FROM Comics.Page
+        WHERE chapterID = $1
+    `, [chapterID]);
+
+    const pageNum = pageNumQuery.rows[0].pagenum || 1;
+
+    const oldDataQuery = await db.query(`
+        SELECT chapterID, pageNumber
+        FROM Comics.Page
+        WHERE pageID = $1
+    `, [pageID]);
+
+    await db.query(`
+        UPDATE Comics.Page 
+        SET chapterID = $1, pageNumber = $2, published = 'f'
+        WHERE pageID = $3;
+    `, [
+        chapterID, pageNum, pageID
+    ]);
+
+    const oldPageNum = oldDataQuery.rows[0].pagenumber;
+    const oldChapter = oldDataQuery.rows[0].chapterid || null;
+    await shiftPageNumDown(oldPageNum, oldChapter);
+};
+
+/**
+ * Moves a chapter to another volume in the same comic
+ *
+ * @param {number} chapterID - The ID of the chapter being moved
+ * @param {number} volumeID - The volume that the chapter will be moved to
+ *
+ * @returns {void}
+ */
+const moveChapter = async (chapterID, volumeID) => {
+
+    const sameComicQuery = await db.query(`
+        SELECT comicID
+        FROM Comics.Volume
+        WHERE volumeID = $1 AND comicID = (SELECT comicID FROM Comics.Chapter WHERE chapterID = $2)
+    `, [volumeID, chapterID]);
+
+    if (sameComicQuery.rowCount === 0) {
+        console.error('Chapter must move to a volume that is in the same comic');
+        return;
+    }
+
+    const chapterNumQuery = await db.query(`
+        SELECT MAX(chapterNumber) + 1 AS chapterNum
+        FROM Comics.Chapter
+        WHERE volumeID = $1
+    `, [volumeID]);
+
+    const chapterNum = chapterNumQuery.rows[0].chapternum || 1;
+
+    const oldDataQuery = await db.query(`
+        SELECT volumeID, chapterNumber
+        FROM Comics.Chapter
+        WHERE chapterID = $1
+    `, [chapterID]);
+
+    await db.query(`
+        UPDATE Comics.Page
+        SET published = 'f'
+        WHERE chapterID = $1`, [chapterID]);
+
+    await db.query(`
+        UPDATE Comics.Chapter 
+        SET volumeID = $1, chapterNumber = $2, published = 'f'
+        WHERE chapterID = $3;
+    `, [
+        volumeID, chapterNum, chapterID
+    ]);
+
+    const oldChapterNum = oldDataQuery.rows[0].pagenumber;
+    const oldVolume = oldDataQuery.rows[0].volumeid;
+    await shiftChapterNumDown(oldChapterNum, oldVolume);
+};
+
 module.exports = {
     createComic,
     addVolume,
-    addChapter
+    addChapter,
+    movePage,
+    moveChapter
 };
