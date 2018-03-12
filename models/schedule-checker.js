@@ -57,7 +57,7 @@ const releasePages = async () => {
                     await db.query(`
                         UPDATE Comics.Volume
                         SET published = 't'
-                        WHERE published = 'f' AND volumeID = $1`, [volumeIDQuery.rows[0].volumeID]);
+                        WHERE published = 'f' AND volumeID = $1`, [volumeIDQuery.rows[0].volumeid]);
                 }
             }
             //if the page's comic is unpublished, publish it
@@ -85,3 +85,8 @@ schedule.scheduleJob(rule, async () => {
         console.error(err);
     }
 });
+
+//for testing purposes
+module.exports = {
+    releasePages
+};
