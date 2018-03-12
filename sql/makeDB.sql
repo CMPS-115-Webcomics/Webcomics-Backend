@@ -11,7 +11,7 @@ CREATE TABLE Comics.Account (
     banned              BOOLEAN DEFAULT false NOT NULL,
     biography           VARCHAR(5000),
     joined              DATE DEFAULT CURRENT_DATE NOT NULL,
-    password            VARCHAR(256) NOT NULL CHECK (LENGTH(password) > 7),
+    password            VARCHAR(256) NOT NULL CHECK (LENGTH(password) >= 8),
     salt                VARCHAR(32) NOT NULL,
     role                Comics.USER_ROLE DEFAULT 'user' NOT NULL
 );
