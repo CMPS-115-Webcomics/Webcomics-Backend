@@ -12,7 +12,8 @@ describe('Schedule-Checker', () => {
     beforeAll(async () => {
         await db.query(`
             INSERT INTO Comics.Account (accountID, username, email, password, salt)
-            VALUES(10, 'c', 'c', '12345678', 'c')`
+            VALUES(10, 'c', 'c', '12345678', 'c')
+            ON CONFLICT DO NOTHING`
         );
 
         await db.query(`
