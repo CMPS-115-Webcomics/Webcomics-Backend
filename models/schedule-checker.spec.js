@@ -59,6 +59,50 @@ describe('Schedule-Checker', () => {
             VALUES(6, 3, 2, 'f')`
         );
     });
+    it('should release the lowest numbered unpublished page', async () => {
+        await db.query(`
+            INSERT INTO Comics.Schedule
+            VALUES(1, TO_NUMBER(TO_CHAR(CURRENT_TIMESTAMP, 'D'), '99'), 'weekly')
+            ON CONFLICT DO NOTHING`
+        );
+        await db.query(`
+            INSERT INTO Comics.Schedule
+            VALUES(2, TO_NUMBER(TO_CHAR(CURRENT_TIMESTAMP, 'D'), '99'), 'weekly')
+            ON CONFLICT DO NOTHING`
+        );
+        await db.query(`
+            UPDATE Comics.Comic
+            SET published = 'f'`
+        );
+        await db.query(`
+            UPDATE Comics.Volume
+            SET published = 'f'`
+        );
+        await db.query(`
+            UPDATE Comics.Chapter
+            SET published = 'f'`
+        );
+        await db.query(`
+            UPDATE Comics.page
+            SET published = 't'
+            WHERE pageNumber = 1`
+        );
+        await db.query(`
+            UPDATE Comics.page
+            SET published = 'f'
+            WHERE pageNumber <> 1`
+        );
+
+        await schedule.releasePages();
+
+        const result6 = await db.query(`
+        SELECT pageID FROM Comics.Page
+        WHERE published = 't'`
+        );
+        expect(result6.rowCount).toEqual(4);
+    });
+});
+
 
     it('should do nothing to the database if there is nothing scheduled to release', async () => {
         await db.query('DELETE FROM Comics.Schedule');
@@ -273,48 +317,3 @@ describe('Schedule-Checker', () => {
         expect(volumeResult5.rowCount).toEqual(1);
         await expect(chapterResult5.rowCount).toEqual(1);
     });
-
-    it('should release the lowest numbered unpublished page', async () => {
-        await db.query(`
-            INSERT INTO Comics.Schedule
-            VALUES(1, TO_NUMBER(TO_CHAR(CURRENT_TIMESTAMP, 'D'), '99'), 'weekly')
-            ON CONFLICT DO NOTHING`
-        );
-        await db.query(`
-            INSERT INTO Comics.Schedule
-            VALUES(2, TO_NUMBER(TO_CHAR(CURRENT_TIMESTAMP, 'D'), '99'), 'weekly')
-            ON CONFLICT DO NOTHING`
-        );
-        await db.query(`
-            UPDATE Comics.Comic
-            SET published = 'f'`
-        );
-        await db.query(`
-            UPDATE Comics.Volume
-            SET published = 'f'`
-        );
-        await db.query(`
-            UPDATE Comics.Chapter
-            SET published = 'f'`
-        );
-        await db.query(`
-            UPDATE Comics.page
-            SET published = 't'
-            WHERE pageNumber = 1`
-        );
-        await db.query(`
-            UPDATE Comics.page
-            SET published = 'f'
-            WHERE pageNumber <> 1`
-        );
-
-        await schedule.releasePages();
-
-        const result6 = await db.query(`
-        SELECT pageID FROM Comics.Page
-        WHERE published = 't' AND pageNumber = 2`
-        );
-
-        expect(result6.rowCount).toEqual(4);
-    });
-});
