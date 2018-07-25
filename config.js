@@ -11,7 +11,8 @@ const config = {
     database: {
         user: json.SQL_USER || process.env.SQL_USER || 'postgres',
         database: json.SQL_DATABASE || process.env.SQL_DATABASE || 'postgres',
-        password: json.SQL_PASSWORD || process.env.SQL_PASSWORD || 'postgres'
+        password: json.SQL_PASSWORD || process.env.SQL_PASSWORD || 'postgres',
+        connectionString: json.connectionString || process.env.DATABASE_URL
     },
     admin: {
         name: json.ADMIN_NAME || process.env.ADMIN_NAME || 'admin',

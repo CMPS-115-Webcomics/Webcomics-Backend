@@ -6,11 +6,9 @@ const {
 const config = require('../config');
 const fs = require('fs');
 
-if (config.instanceConnecitonName && config.enviroment === 'production') {
-  config.database.host = `/cloudsql/${config.instanceConnecitonName}`;
-}
-
-const db = new Pool(config.database);
+const db = new Pool({
+    connectionString: config.connectionString
+});
 
 const getFile = (fileName, type) => {
     return new Promise((resolve, reject) => {
